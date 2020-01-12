@@ -98,6 +98,18 @@ impl RegulatoryGraph {
         return self.variable_to_index.contains_key(var);
     }
 
+    pub fn has_regulation(&self, source: VariableId, target: VariableId) -> bool {
+        for r in &self.regulations {
+            if r.source == source && r.target == target {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    pub fn get_variable(&self, id: VariableId) -> &Variable {
+        return &self.variables[id.0];
+    }
 }
 
 #[cfg(test)]
@@ -168,6 +180,7 @@ mod tests {
         assert_eq!(make_rg(), rg);
     }
 
+    #[test]
     fn test_regulatory_graph_from_individual_regulations() {
         let mut rg = RegulatoryGraph::new(vec![
             "abc".to_string(),

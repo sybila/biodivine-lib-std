@@ -2,9 +2,9 @@ use crate::boolean_network::builder::UpdateFunctionTemplate;
 use crate::boolean_network::builder::UpdateFunctionTemplate::*;
 use crate::boolean_network::UpdateFunction;
 use std::convert::TryFrom;
+use std::fmt::{Display, Error, Formatter};
 use std::iter::Peekable;
 use std::str::Chars;
-use std::fmt::{Display, Formatter, Error};
 
 impl TryFrom<&str> for UpdateFunctionTemplate {
     type Error = String;
@@ -271,12 +271,21 @@ mod tests {
     #[test]
     fn parse_update_function_basic() {
         let inputs = vec![
-            "var", "var1(a, b, c)", "!foo(a)",
-            "(var(a, b) | x)", "(xyz123 & abc)", "(a ^ b)",
-            "(a => b)", "(a <=> b)", "(a <=> !(f(a, b) => (c ^ d)))"
+            "var",
+            "var1(a, b, c)",
+            "!foo(a)",
+            "(var(a, b) | x)",
+            "(xyz123 & abc)",
+            "(a ^ b)",
+            "(a => b)",
+            "(a <=> b)",
+            "(a <=> !(f(a, b) => (c ^ d)))",
         ];
         for str in inputs {
-            assert_eq!(str, format!("{}", UpdateFunctionTemplate::try_from(str).unwrap()))
+            assert_eq!(
+                str,
+                format!("{}", UpdateFunctionTemplate::try_from(str).unwrap())
+            )
         }
     }
 

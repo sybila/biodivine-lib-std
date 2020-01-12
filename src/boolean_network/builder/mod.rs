@@ -1,11 +1,13 @@
-use crate::boolean_network::{Effect, Parameter, Regulation, Variable, VariableId, UpdateFunction};
+use crate::boolean_network::{
+    Effect, Parameter, ParameterId, Regulation, UpdateFunction, Variable, VariableId,
+};
 use std::collections::HashMap;
 
+mod impl_boolean_network_builder;
+mod impl_boolean_network_parser;
 mod impl_regulation_parser;
 mod impl_regulatory_graph;
 mod impl_update_function_parser;
-mod impl_boolean_network_parser;
-mod impl_boolean_network_builder;
 mod impl_update_function_template;
 
 /// Update function template is an abstract syntax tree of an `UpdateFunction`.
@@ -45,5 +47,6 @@ pub struct RegulatoryGraph {
 pub struct BooleanNetworkBuilder {
     regulatory_graph: RegulatoryGraph,
     parameters: Vec<Parameter>,
-    update_functions: Vec<Option<UpdateFunction>>
+    parameter_to_index: HashMap<String, ParameterId>,
+    update_functions: Vec<Option<UpdateFunction>>,
 }
