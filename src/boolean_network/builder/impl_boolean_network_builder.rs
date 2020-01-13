@@ -31,13 +31,13 @@ impl BooleanNetwork {
             .regulatory_graph
             .get_variable_id(variable)
             .ok_or(format!(
-                "Can't add update function. Unknown variable {}.",
+                "Can't add update function. Unknown variable '{}'.",
                 variable
             ))?;
 
         if let Some(_) = self.update_functions[variable_index.0] {
             return Err(format!(
-                "Can't add update function. Function for {} already set.",
+                "Can't add update function. Function for '{}' already set.",
                 variable
             ));
         }
@@ -50,14 +50,14 @@ impl BooleanNetwork {
         // Check if parameters are used correctly
         for p_in_f in &parameters {
             if self.regulatory_graph.get_variable_id(p_in_f.name.as_str()) != None {
-                return Err(format!("Can't add update function for {}. {} can't be both a parameter and a variable.", variable, p_in_f.name));
+                return Err(format!("Can't add update function for '{}'. '{}' can't be both a parameter and a variable.", variable, p_in_f.name));
             }
             if let Some(id) = self.get_parameter_id(p_in_f.name.as_str()) {
                 // This is an existing parameter - check consistency.
                 let p_in_bn = self.get_parameter(id);
                 if p_in_f.cardinality != p_in_bn.cardinality {
                     return Err(format!(
-                        "Can't add update function for {}. {} appears with cardinality {} and {}.",
+                        "Can't add update function for '{}'. '{}' appears with cardinality{} and {}.",
                         variable, p_in_f.name, p_in_f.cardinality, p_in_bn.cardinality
                     ));
                 }
@@ -71,7 +71,7 @@ impl BooleanNetwork {
                 .regulatory_graph
                 .get_variable_id(var.name.as_str())
                 .ok_or(format!(
-                    "Can't add update function for {}. Function contains unknown variable {}.",
+                    "Can't add update function for '{}'. Function contains unknown variable '{}'.",
                     variable, var.name
                 ))?;
 
@@ -81,7 +81,7 @@ impl BooleanNetwork {
                 == None
             {
                 return Err(format!(
-                    "Can't add update function for {}. Variable {} does not regulate {}.",
+                    "Can't add update function for '{}'. Variable '{}' does not regulate '{}'.",
                     variable, var.name, variable
                 ));
             }
@@ -133,5 +133,4 @@ mod tests {
         // missing regulation
         assert!(bn.add_update_function("b", "p(b) => a").is_err());
     }
-
 }

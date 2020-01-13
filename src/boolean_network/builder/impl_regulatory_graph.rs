@@ -205,4 +205,14 @@ mod tests {
         rg.add_regulation_string("numbers_123 -? hello").unwrap();
         assert_eq!(make_rg(), rg);
     }
+
+    #[test]
+    fn test_regulatory_graph_invalid_regulations() {
+        let mut rg = RegulatoryGraph::new(&vec!["a".to_string(), "b".to_string()]);
+
+        assert!(rg.add_regulation_string(" a -> bb ").is_err());
+        assert!(rg.add_regulation_string(" aa -> b ").is_err());
+        rg.add_regulation_string(" a -> b ").unwrap();
+        assert!(rg.add_regulation_string(" a -| b ").is_err());
+    }
 }

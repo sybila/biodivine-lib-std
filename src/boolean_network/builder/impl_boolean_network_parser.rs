@@ -64,7 +64,7 @@ mod tests {
                 }),
                 Box::new(UpdateFunction::Or(
                     Box::new(UpdateFunction::Variable { id: VariableId(2) }),
-                    Box::new(UpdateFunction::Variable { id: VariableId(2) })
+                    Box::new(UpdateFunction::Variable { id: VariableId(2) }),
                 )),
             )),
         );

@@ -171,7 +171,8 @@ mod tests {
     #[test]
     fn test_extract_parameters() {
         let function =
-            UpdateFunctionTemplate::try_from("f() & !var1 => ((par(a, b, c) | g) <=> q(a))").unwrap();
+            UpdateFunctionTemplate::try_from("f() & !var1 => ((par(a, b, c) | g) <=> q(a))")
+                .unwrap();
         let params = function.extract_parameters();
         let mut expected = HashSet::new();
         expected.insert(BNParameter {
@@ -193,13 +194,17 @@ mod tests {
     #[test]
     fn test_extract_variables() {
         let function =
-            UpdateFunctionTemplate::try_from("f() & !var1 => ((par(a, b, c) | g) <=> q(a))").unwrap();
+            UpdateFunctionTemplate::try_from("f() & !var1 => ((par(a, b, c) | g) <=> q(a))")
+                .unwrap();
         let params = function.extract_variables();
         let mut expected = HashSet::new();
-        expected.insert(BNVariable { name: "var1".to_string() });
-        expected.insert(BNVariable { name: "g".to_string() });
+        expected.insert(BNVariable {
+            name: "var1".to_string(),
+        });
+        expected.insert(BNVariable {
+            name: "g".to_string(),
+        });
 
         assert_eq!(expected, params);
     }
-
 }
