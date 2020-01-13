@@ -133,4 +133,22 @@ mod tests {
 
         assert_eq!(bn, BooleanNetwork::try_from(bn_string).unwrap());
     }
+
+    #[test]
+    fn test_bn_from_and_to_string() {
+        let bn_string = "a -> b
+a -?? a
+b -|? c
+c -? a
+c -> d
+$a: (a & (p(c) => (c | c)))
+$b: (p(a) <=> q(a, a))
+$c: (q(b, b) => !(b ^ k))
+";
+
+        assert_eq!(
+            bn_string,
+            BooleanNetwork::try_from(bn_string).unwrap().to_string()
+        );
+    }
 }
