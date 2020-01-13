@@ -10,15 +10,19 @@ impl BooleanNetwork {
     }
 
     pub fn get_variable(&self, id: VariableId) -> &Variable {
-        return &self.variables[id.0];
+        return self.regulatory_graph.get_variable(id);
     }
 
     pub fn get_parameter(&self, id: ParameterId) -> &Parameter {
         return &self.parameters[id.0];
     }
 
+    pub fn get_parameter_id(&self, param: &str) -> Option<ParameterId> {
+        return self.parameter_to_index.get(param).map(|p| *p);
+    }
+
     pub fn variable_ids(&self) -> Map<Range<usize>, fn(usize) -> VariableId> {
-        return (0..self.variables.len()).map(|i| VariableId(i));
+        return self.regulatory_graph.variable_ids();
     }
 
     pub fn parameter_ids(&self) -> Map<Range<usize>, fn(usize) -> ParameterId> {

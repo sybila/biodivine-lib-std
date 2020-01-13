@@ -4,7 +4,7 @@ use crate::lock_free_array_queue::LockFreeArrayQueue;
 use crate::parameters::ParamSet;
 use crossbeam::scope;
 
-fn reachability<P, G>(graph: G, initial: &Vec<P>, parallelism: usize, empty: P) -> Vec<P>
+pub fn reachability<P, G>(graph: G, initial: &Vec<P>, parallelism: usize, empty: P) -> Vec<P>
 where
     P: ParamSet,
     G: EvolutionOperator<P>,

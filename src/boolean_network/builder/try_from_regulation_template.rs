@@ -1,3 +1,5 @@
+//! **(internal)** Implements parser of regulation expressions (e.g. `a -> b` or `v1 -?? v2`).
+
 use crate::boolean_network::builder::RegulationTemplate;
 use crate::boolean_network::Effect;
 use regex::Regex;
@@ -22,7 +24,7 @@ impl TryFrom<&str> for RegulationTemplate {
                 },
             })
         } else {
-            Err(format!("Line {} does not describe a regulation", value))
+            Err(format!("{} is not a regulation string", value))
         };
     }
 }

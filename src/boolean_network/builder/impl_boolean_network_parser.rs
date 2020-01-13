@@ -1,6 +1,4 @@
-use crate::boolean_network::builder::{
-    BooleanNetworkBuilder, RegulationTemplate, RegulatoryGraph, UpdateFunctionTemplate,
-};
+use crate::boolean_network::builder::RegulatoryGraph;
 use crate::boolean_network::BooleanNetwork;
 use regex::Regex;
 use std::convert::TryFrom;
@@ -9,48 +7,39 @@ impl TryFrom<&str> for BooleanNetwork {
     type Error = String;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
+        // Regex that matches lines which define an update function.
         let function_re =
             Regex::new(r"^\$\s*(?P<name>[a-zA-Z0-9_]+)\s*:\s*(?P<function>.+)$").unwrap();
 
-        // Every line that is not empty and does not match an
-        // update function pattern must be parsed into a regulation.
-        let mut regulations: Vec<RegulationTemplate> = Vec::new();
+        // Every non-empty line that is not an update function is considered to be a regulation:
+        let mut regulations: Vec<String> = Vec::new();
         for line in value.lines() {
             let line = line.trim();
             if !line.is_empty() && !function_re.is_match(line) {
-                regulations.push(RegulationTemplate::try_from(line)?);
+                regulations.push(line.to_string());
             }
         }
 
-        // Every line that matches the update function pattern must be parsed as update function.
-        let mut update_functions: Vec<(String, UpdateFunctionTemplate)> = Vec::new();
+        let regulatory_graph = RegulatoryGraph::from_regulation_strings(regulations)?;
+        let mut bn = BooleanNetwork::new(regulatory_graph);
+
         for line in value.lines() {
-            let line = line.trim();
-            if let Some(captures) = function_re.captures(line) {
-                let name = captures["name"].to_string();
-                let function = UpdateFunctionTemplate::try_from(&captures["function"])?;
-                update_functions.push((name, function));
+            if let Some(captures) = function_re.captures(line.trim()) {
+                bn.add_update_function(&captures["name"], &captures["function"])?;
             }
         }
 
-        let regulatory_graph = RegulatoryGraph::from_regulations(regulations);
-
-        let mut bn_builder = BooleanNetworkBuilder::new_from_regulatory_graph(regulatory_graph);
-
-        for (variable, function) in update_functions {
-            bn_builder.add_update_function(&variable, function)?;
-        }
-
-        return Ok(bn_builder.build());
+        return Ok(bn);
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::boolean_network::builder::RegulatoryGraph;
     use crate::boolean_network::{
-        BooleanNetwork, Effect, Parameter, ParameterId, Regulation, UpdateFunction, Variable,
-        VariableId,
+        BooleanNetwork, Parameter, ParameterId, UpdateFunction, VariableId,
     };
+    use crate::util::build_index_map;
     use std::convert::TryFrom;
 
     #[test]
@@ -102,71 +91,43 @@ mod tests {
             )),
         );
 
+        let mut rg = RegulatoryGraph::new(&vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ]);
+        rg.add_regulation_string("a -> b").unwrap();
+        rg.add_regulation_string("a -?? a").unwrap();
+        rg.add_regulation_string("b -|? c").unwrap();
+        rg.add_regulation_string("c -? a").unwrap();
+        rg.add_regulation_string("c -| d").unwrap();
+
+        let parameters = vec![
+            Parameter {
+                name: "p".to_string(),
+                cardinality: 1,
+            },
+            Parameter {
+                name: "q".to_string(),
+                cardinality: 2,
+            },
+            Parameter {
+                name: "k".to_string(),
+                cardinality: 0,
+            },
+        ];
+
         let bn = BooleanNetwork {
-            variables: vec![
-                Variable {
-                    name: "a".to_string(),
-                },
-                Variable {
-                    name: "b".to_string(),
-                },
-                Variable {
-                    name: "c".to_string(),
-                },
-                Variable {
-                    name: "d".to_string(),
-                },
-            ],
-            parameters: vec![
-                Parameter {
-                    name: "p".to_string(),
-                    cardinality: 1,
-                },
-                Parameter {
-                    name: "q".to_string(),
-                    cardinality: 2,
-                },
-                Parameter {
-                    name: "k".to_string(),
-                    cardinality: 0,
-                },
-            ],
-            regulations: vec![
-                Regulation {
-                    source: VariableId(0),
-                    target: VariableId(1),
-                    observable: true,
-                    effect: Some(Effect::ACTIVATION),
-                },
-                Regulation {
-                    source: VariableId(0),
-                    target: VariableId(0),
-                    observable: false,
-                    effect: None,
-                },
-                Regulation {
-                    source: VariableId(1),
-                    target: VariableId(2),
-                    observable: false,
-                    effect: Some(Effect::INHIBITION),
-                },
-                Regulation {
-                    source: VariableId(2),
-                    target: VariableId(0),
-                    observable: true,
-                    effect: None,
-                },
-                Regulation {
-                    source: VariableId(2),
-                    target: VariableId(3),
-                    observable: true,
-                    effect: Some(Effect::INHIBITION),
-                },
-            ],
+            regulatory_graph: rg,
+            parameter_to_index: build_index_map(
+                &parameters.iter().map(|p| p.name.clone()).collect(),
+                |_, i| ParameterId(i),
+            ),
+            parameters,
             update_functions: vec![Some(f1), Some(f2), Some(f3), None],
         };
 
         assert_eq!(bn, BooleanNetwork::try_from(bn_string).unwrap());
     }
-
 }

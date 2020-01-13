@@ -5,7 +5,7 @@ use std::collections::HashSet;
 impl UpdateFunction {
     pub fn variables(&self) -> HashSet<VariableId> {
         return match self {
-            Parameter { id, inputs } => {
+            Parameter { id: _, inputs } => {
                 let mut set = HashSet::new();
                 for arg in inputs {
                     set.insert(arg.clone());

@@ -1,16 +1,16 @@
 use crate::boolean_network::builder::UpdateFunctionTemplate::*;
 use crate::boolean_network::builder::{RegulatoryGraph, UpdateFunctionTemplate};
 use crate::boolean_network::Parameter as BNParameter;
+use crate::boolean_network::Variable as BNVariable;
 use crate::boolean_network::{ParameterId, UpdateFunction, VariableId};
 use std::collections::{HashMap, HashSet};
 
 impl UpdateFunctionTemplate {
-    /// Swap variables in this function that don't occur in the given `rg` for
-    /// unary parameters.
+    /// Swap variables in this function that don't occur in the given `rg` for unary parameters.
     pub fn swap_unary_parameters(self, rg: &RegulatoryGraph) -> Box<UpdateFunctionTemplate> {
         return Box::new(match self {
             Variable { name } => {
-                if rg.has_variable(&name) {
+                if rg.get_variable_id(&name) != None {
                     Variable { name }
                 } else {
                     Parameter {
@@ -29,6 +29,7 @@ impl UpdateFunctionTemplate {
         });
     }
 
+    /// Find all parameters in this update function and put them in a separate hash set.
     pub fn extract_parameters(&self) -> HashSet<BNParameter> {
         return match self {
             Parameter { name, inputs } => {
@@ -49,6 +50,25 @@ impl UpdateFunctionTemplate {
         };
     }
 
+    /// Find all variables in this update function and put them in a separate hash set.
+    pub fn extract_variables(&self) -> HashSet<BNVariable> {
+        return match self {
+            Parameter { .. } => HashSet::new(),
+            Variable { name } => {
+                let mut set = HashSet::new();
+                set.insert(BNVariable { name: name.clone() });
+                return set;
+            }
+            Not(inner) => inner.extract_variables(),
+            And(a, b) => extract_variable_util(a, b),
+            Or(a, b) => extract_variable_util(a, b),
+            Imp(a, b) => extract_variable_util(a, b),
+            Iff(a, b) => extract_variable_util(a, b),
+            Xor(a, b) => extract_variable_util(a, b),
+        };
+    }
+
+    /// Transform this template into a full-on `UpdateFunction`.
     pub fn build(
         &self,
         variable_to_index: &HashMap<String, VariableId>,
@@ -56,20 +76,23 @@ impl UpdateFunctionTemplate {
     ) -> Result<Box<UpdateFunction>, String> {
         return Ok(Box::new(match self {
             Variable { name } => {
-                let index = variable_to_index
-                    .get(name)
-                    .ok_or(format!("(2) Unknown variable {}", name))?;
+                let index = variable_to_index.get(name).ok_or(format!(
+                    "Can't build update function. Unknown variable {}.",
+                    name
+                ))?;
                 UpdateFunction::Variable { id: *index }
             }
             Parameter { name, inputs } => {
-                let index = parameter_to_index
-                    .get(name)
-                    .ok_or(format!("Unknown parameter {}", name))?;
+                let index = parameter_to_index.get(name).ok_or(format!(
+                    "Can't build update function. Unknown parameter {}.",
+                    name
+                ))?;
                 let mut args = Vec::with_capacity(inputs.len());
                 for input in inputs {
-                    let index = variable_to_index
-                        .get(input)
-                        .ok_or(format!("(3) Unknown variable {}", input))?;
+                    let index = variable_to_index.get(input).ok_or(format!(
+                        "Can't build update function. Unknown variable {} in {}",
+                        input, self
+                    ))?;
                     args.push(*index);
                 }
                 UpdateFunction::Parameter {
@@ -111,18 +134,26 @@ fn extract_parameters_util(
     return a;
 }
 
+fn extract_variable_util(
+    a: &UpdateFunctionTemplate,
+    b: &UpdateFunctionTemplate,
+) -> HashSet<BNVariable> {
+    let mut a = a.extract_variables();
+    a.extend(b.extract_variables());
+    return a;
+}
+
 #[cfg(test)]
 mod tests {
     use crate::boolean_network::builder::RegulatoryGraph;
     use crate::boolean_network::builder::UpdateFunctionTemplate;
     use crate::boolean_network::Parameter as BNParameter;
-    use crate::boolean_network::UpdateFunction::*;
     use std::collections::HashSet;
     use std::convert::TryFrom;
 
     #[test]
     fn test_swap_unary_parameters() {
-        let rg = RegulatoryGraph::new(vec![
+        let rg = RegulatoryGraph::new(&vec![
             "abc".to_string(),
             "as123".to_string(),
             "hello".to_string(),
@@ -157,5 +188,4 @@ mod tests {
 
         assert_eq!(expected, params);
     }
-
 }

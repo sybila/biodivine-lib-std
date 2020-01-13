@@ -1,7 +1,5 @@
 use crate::boolean_network::UpdateFunction::*;
-use crate::boolean_network::{
-    BooleanNetwork, Effect, Parameter, Regulation, UpdateFunction, Variable, VariableId,
-};
+use crate::boolean_network::{BooleanNetwork, Effect, Regulation, UpdateFunction, Variable};
 use std::fmt::{Display, Error, Formatter};
 
 impl Display for Variable {
@@ -12,7 +10,7 @@ impl Display for Variable {
 
 impl Display for BooleanNetwork {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        for reg in &self.regulations {
+        for reg in self.regulatory_graph.regulations() {
             // print all the regulations
             write!(f, "{}\n", Reg(self, reg))?;
         }

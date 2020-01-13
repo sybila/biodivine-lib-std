@@ -77,9 +77,6 @@ where
 mod tests {
     use crate::lock_free_array::LockFreeArray;
     use crossbeam::thread::scope;
-    use std::sync::Arc;
-    use std::thread;
-    use std::thread::JoinHandle;
 
     #[test]
     fn single_thread_update_test() {
@@ -88,7 +85,7 @@ mod tests {
             assert_eq!(
                 Some((9 - i) * 2),
                 array.update(i, |v| {
-                    *v = (9 - i);
+                    *v = 9 - i;
                     return (*v) * 2;
                 })
             );

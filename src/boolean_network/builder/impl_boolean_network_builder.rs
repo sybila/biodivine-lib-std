@@ -1,92 +1,105 @@
-use crate::boolean_network::builder::{
-    BooleanNetworkBuilder, RegulationTemplate, RegulatoryGraph, UpdateFunctionTemplate,
-};
-use crate::boolean_network::{BooleanNetwork, ParameterId, VariableId};
+use crate::boolean_network::builder::{RegulatoryGraph, UpdateFunctionTemplate};
+use crate::boolean_network::{BooleanNetwork, ParameterId};
 use std::collections::HashMap;
+use std::convert::TryFrom;
 
-impl BooleanNetworkBuilder {
-    pub fn new_from_regulatory_graph(graph: RegulatoryGraph) -> BooleanNetworkBuilder {
-        let num_variables = graph.variables.len();
-        return BooleanNetworkBuilder {
+impl BooleanNetwork {
+    /// Create a new `BooleanNetwork` without any `UpdateFunction`s or parameters.
+    pub fn new(graph: RegulatoryGraph) -> BooleanNetwork {
+        let num_vars = graph.num_vars();
+        return BooleanNetwork {
             regulatory_graph: graph,
             parameters: Vec::new(),
             parameter_to_index: HashMap::new(),
-            update_functions: vec![None; num_variables],
+            update_functions: vec![None; num_vars],
         };
     }
 
+    /// Add a new update function to an existing `BooleanNetwork`.
+    ///
+    /// Parameters present in `update_function` are added to the network when needed.
+    ///
+    /// Returns an error if the network has no such variable or there already is an update function
+    /// for the given variable. Also, `update_function` must be a valid `UpdateFunction` and
+    /// cannot clash with other parameter definitions (in name or cardinality)
     pub fn add_update_function(
         &mut self,
-        variable: &String,
-        update_function: UpdateFunctionTemplate,
+        variable: &str,
+        update_function: &str,
     ) -> Result<(), String> {
-        let update_function = update_function.swap_unary_parameters(&self.regulatory_graph);
+        let variable_index = self
+            .regulatory_graph
+            .get_variable_id(variable)
+            .ok_or(format!(
+                "Can't add update function. Unknown variable {}.",
+                variable
+            ))?;
+
+        if let Some(_) = self.update_functions[variable_index.0] {
+            return Err(format!(
+                "Can't add update function. Function for {} already set.",
+                variable
+            ));
+        }
+
+        let update_function = UpdateFunctionTemplate::try_from(update_function)?;
+        let update_function = *update_function.swap_unary_parameters(&self.regulatory_graph);
 
         let parameters = update_function.extract_parameters();
 
-        // add new parameters and check for mismatch in parameter cardinality
+        // Add parameters into the network if needed.
         for p_in_f in &parameters {
-            let mut found = false;
-            for p_in_net in &self.parameters {
-                if p_in_f.name == p_in_net.name {
-                    found = true;
-                    if p_in_f.cardinality != p_in_net.cardinality {
-                        return Err(format!(
-                            "Parameter {} occurs with cardinality {} and {}",
-                            p_in_f.name, p_in_f.cardinality, p_in_net.cardinality
-                        ));
-                    }
+            if self.regulatory_graph.get_variable_id(p_in_f.name.as_str()) != None {
+                return Err(format!("Can't add update function for {}. {} can't be both a parameter and a variable.", variable, p_in_f.name));
+            }
+            if let Some(id) = self.get_parameter_id(p_in_f.name.as_str()) {
+                // This is an existing parameter - check consistency.
+                let p_in_bn = self.get_parameter(id);
+                if p_in_f.cardinality != p_in_bn.cardinality {
+                    return Err(format!(
+                        "Can't add update function for {}. {} appears with cardinality {} and {}.",
+                        variable, p_in_f.name, p_in_f.cardinality, p_in_bn.cardinality
+                    ));
                 }
-            }
-            if self.regulatory_graph.has_variable(&p_in_f.name) {
-                return Err(format!(
-                    "{} can't be both a variable and a parameter",
-                    p_in_f.name
-                ));
-            }
-            if !found {
+            } else {
+                // This is a new parameter - add it.
                 self.parameter_to_index
                     .insert(p_in_f.name.clone(), ParameterId(self.parameters.len()));
                 self.parameters.push(p_in_f.clone());
             }
         }
 
+        // Check if regulation constraints are satisfied.
+        let variables = update_function.extract_variables();
+        for var in &variables {
+            let regulator_id = self
+                .regulatory_graph
+                .get_variable_id(var.name.as_str())
+                .ok_or(format!(
+                    "Can't add update function for {}. Function contains unknown variable {}.",
+                    variable, var.name
+                ))?;
+
+            if self
+                .regulatory_graph
+                .get_regulation(regulator_id, variable_index)
+                == None
+            {
+                return Err(format!(
+                    "Can't add update function for {}. Variable {} does not regulate {}.",
+                    variable, var.name, variable
+                ));
+            }
+        }
+
+        // Now we can actually build the update function.
         let update_function = *update_function.build(
             &self.regulatory_graph.variable_to_index,
             &self.parameter_to_index,
         )?;
 
-        let variable_index = *self
-            .regulatory_graph
-            .variable_to_index
-            .get(variable)
-            .ok_or(format!("(1) Unknown variable {}", variable))?;
-
-        // check if update function only contains allowed regulations
-        for regulator in update_function.variables() {
-            if !self
-                .regulatory_graph
-                .has_regulation(regulator, variable_index)
-            {
-                return Err(format!(
-                    "{} depends on {} but the regulation is not specified",
-                    self.regulatory_graph.get_variable(variable_index),
-                    self.regulatory_graph.get_variable(regulator)
-                ));
-            }
-        }
-
         self.update_functions[variable_index.0] = Some(update_function);
 
         return Ok(());
-    }
-
-    pub fn build(self) -> BooleanNetwork {
-        return BooleanNetwork {
-            variables: self.regulatory_graph.variables,
-            regulations: self.regulatory_graph.regulations,
-            parameters: self.parameters,
-            update_functions: self.update_functions,
-        };
     }
 }

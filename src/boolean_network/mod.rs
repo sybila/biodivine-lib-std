@@ -7,6 +7,9 @@
 //!
 //! Variables and regulations together form a *regulatory graph*.
 
+use crate::boolean_network::builder::RegulatoryGraph;
+use std::collections::HashMap;
+
 pub mod builder;
 mod impl_boolean_network;
 mod impl_boolean_network_string_serialisation;
@@ -62,11 +65,11 @@ pub struct Regulation {
 ///
 /// Note that if the `UpdateFunction` for a variable is unspecified, it means the
 /// behaviour of the whole function is undefined (only guided by the regulations).
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BooleanNetwork {
-    variables: Vec<Variable>,
-    regulations: Vec<Regulation>,
+    regulatory_graph: RegulatoryGraph,
     parameters: Vec<Parameter>,
+    parameter_to_index: HashMap<String, ParameterId>,
     update_functions: Vec<Option<UpdateFunction>>,
 }
 

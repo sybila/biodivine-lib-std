@@ -68,7 +68,7 @@ mod tests {
     fn multi_thread_test() {
         let total_actual_ops = AtomicU32::new(0);
         let mut counts: Vec<AtomicU32> = Vec::new();
-        for i in 0..10 {
+        for _ in 0..10 {
             counts.push(AtomicU32::new(0));
         }
         let queue = LockFreeArrayQueue::new(10);

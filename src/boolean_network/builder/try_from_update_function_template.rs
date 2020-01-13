@@ -1,8 +1,6 @@
 use crate::boolean_network::builder::UpdateFunctionTemplate;
 use crate::boolean_network::builder::UpdateFunctionTemplate::*;
-use crate::boolean_network::UpdateFunction;
 use std::convert::TryFrom;
-use std::fmt::{Display, Error, Formatter};
 use std::iter::Peekable;
 use std::str::Chars;
 
@@ -15,33 +13,7 @@ impl TryFrom<&str> for UpdateFunctionTemplate {
     }
 }
 
-impl Display for UpdateFunctionTemplate {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        match self {
-            UpdateFunctionTemplate::Variable { name } => {
-                write!(f, "{}", name)?;
-            }
-            UpdateFunctionTemplate::Parameter { name, inputs } => {
-                write!(f, "{}", name)?;
-                if inputs.len() > 0 {
-                    write!(f, "({}", inputs[0])?;
-                    for i in 1..inputs.len() {
-                        write!(f, ", {}", inputs[i])?;
-                    }
-                    write!(f, ")")?;
-                }
-            }
-            Not(inner) => write!(f, "!{}", inner)?,
-            And(a, b) => write!(f, "({} & {})", a, b)?,
-            Or(a, b) => write!(f, "({} | {})", a, b)?,
-            Imp(a, b) => write!(f, "({} => {})", a, b)?,
-            Iff(a, b) => write!(f, "({} <=> {})", a, b)?,
-            Xor(a, b) => write!(f, "({} ^ {})", a, b)?,
-        }
-        Ok(())
-    }
-}
-
+/// **(internal)** An enum of possible tokens occurring in a string representing an `UpdateFunctionTemplate`.
 #[derive(Debug, Eq, PartialEq)]
 enum Token {
     Not,                // '!'
@@ -128,6 +100,7 @@ fn tokenize_function_group(
     };
 }
 
+/// **(internal)** Return true if given char can appear in a valid name.
 fn is_valid_in_name(c: char) -> bool {
     return c.is_alphanumeric() || c == '_';
 }
@@ -289,4 +262,51 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_invalid_tokens() {
+        assert!(UpdateFunctionTemplate::try_from("a = b").is_err());
+        assert!(UpdateFunctionTemplate::try_from("a > b").is_err());
+        assert!(UpdateFunctionTemplate::try_from("a <= b").is_err());
+        assert!(UpdateFunctionTemplate::try_from("a <- b").is_err());
+        assert!(UpdateFunctionTemplate::try_from("a ? b").is_err());
+    }
+
+    #[test]
+    fn test_invalid_parentheses() {
+        assert!(UpdateFunctionTemplate::try_from("a & (b <=> c").is_err());
+        assert!(UpdateFunctionTemplate::try_from("(f => g))").is_err());
+        assert!(UpdateFunctionTemplate::try_from("a <=> (f(a,b ^ g)").is_err());
+        assert!(UpdateFunctionTemplate::try_from("a | (f(a,b)) ^ g)").is_err());
+    }
+
+    #[test]
+    fn test_malformed_args() {
+        assert!(UpdateFunctionTemplate::try_from("f(a b c)").is_err());
+        assert!(UpdateFunctionTemplate::try_from("f(a, b, c,)").is_err());
+        assert!(UpdateFunctionTemplate::try_from("f(a & c)").is_err());
+        assert!(UpdateFunctionTemplate::try_from("f(a, f(b), c)").is_err());
+    }
+
+    #[test]
+    fn test_missing_formula() {
+        assert!(UpdateFunctionTemplate::try_from("a & | g").is_err());
+        assert!(UpdateFunctionTemplate::try_from("a &").is_err());
+        assert!(UpdateFunctionTemplate::try_from("a & !").is_err());
+        assert!(UpdateFunctionTemplate::try_from("a & | g").is_err());
+        assert!(UpdateFunctionTemplate::try_from("a & a b c").is_err());
+        assert!(UpdateFunctionTemplate::try_from("a & ^x").is_err());
+        assert!(UpdateFunctionTemplate::try_from("a & x^").is_err());
+    }
+
+    #[test]
+    fn operator_priority_test() {
+        let formula = "a & b | c => d ^ e <=> f";
+        let expected = "((((a & b) | c) => (d ^ e)) <=> f)".to_string();
+        assert_eq!(
+            expected,
+            UpdateFunctionTemplate::try_from(formula)
+                .unwrap()
+                .to_string()
+        );
+    }
 }
