@@ -148,6 +148,7 @@ mod tests {
     use crate::boolean_network::builder::RegulatoryGraph;
     use crate::boolean_network::builder::UpdateFunctionTemplate;
     use crate::boolean_network::Parameter as BNParameter;
+    use crate::boolean_network::Variable as BNVariable;
     use std::collections::HashSet;
     use std::convert::TryFrom;
 
@@ -159,9 +160,9 @@ mod tests {
             "hello".to_string(),
         ]);
         let function =
-            UpdateFunctionTemplate::try_from("f & (abc & as123_param => p(abc, hello))").unwrap();
+            UpdateFunctionTemplate::try_from("f & (!abc | as123_param => p(abc, hello))").unwrap();
         let expected =
-            UpdateFunctionTemplate::try_from("f() & (abc & as123_param() => p(abc, hello))")
+            UpdateFunctionTemplate::try_from("f() & (!abc | as123_param() => p(abc, hello))")
                 .unwrap();
 
         assert_eq!(expected, *function.swap_unary_parameters(&rg));
@@ -170,7 +171,7 @@ mod tests {
     #[test]
     fn test_extract_parameters() {
         let function =
-            UpdateFunctionTemplate::try_from("f() & var1 => (par(a, b, c) <=> q(a))").unwrap();
+            UpdateFunctionTemplate::try_from("f() & !var1 => ((par(a, b, c) | g) <=> q(a))").unwrap();
         let params = function.extract_parameters();
         let mut expected = HashSet::new();
         expected.insert(BNParameter {
@@ -188,4 +189,17 @@ mod tests {
 
         assert_eq!(expected, params);
     }
+
+    #[test]
+    fn test_extract_variables() {
+        let function =
+            UpdateFunctionTemplate::try_from("f() & !var1 => ((par(a, b, c) | g) <=> q(a))").unwrap();
+        let params = function.extract_variables();
+        let mut expected = HashSet::new();
+        expected.insert(BNVariable { name: "var1".to_string() });
+        expected.insert(BNVariable { name: "g".to_string() });
+
+        assert_eq!(expected, params);
+    }
+
 }

@@ -284,6 +284,7 @@ mod tests {
         assert!(UpdateFunctionTemplate::try_from("f(a b c)").is_err());
         assert!(UpdateFunctionTemplate::try_from("f(a, b, c,)").is_err());
         assert!(UpdateFunctionTemplate::try_from("f(a & c)").is_err());
+        assert!(UpdateFunctionTemplate::try_from("f(a, & c)").is_err());
         assert!(UpdateFunctionTemplate::try_from("f(a, f(b), c)").is_err());
     }
 
@@ -296,6 +297,9 @@ mod tests {
         assert!(UpdateFunctionTemplate::try_from("a & a b c").is_err());
         assert!(UpdateFunctionTemplate::try_from("a & ^x").is_err());
         assert!(UpdateFunctionTemplate::try_from("a & x^").is_err());
+        assert!(UpdateFunctionTemplate::try_from(",").is_err());
+        assert!(UpdateFunctionTemplate::try_from(",hello").is_err());
+        assert!(UpdateFunctionTemplate::try_from("hello,").is_err());
     }
 
     #[test]

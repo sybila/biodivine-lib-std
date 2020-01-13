@@ -50,9 +50,9 @@ mod tests {
             b -|? c
             c -? a
             c -| d
-            $a: a & (p(c) => c)
+            $a: a & (p(c) => (c | c))
             $b: p(a) <=> q(a, a)
-            $c: q(b, b) => (b ^ k)
+            $c: q(b, b) => !(b ^ k)
         ";
 
         let f1 = UpdateFunction::And(
@@ -62,7 +62,10 @@ mod tests {
                     id: ParameterId(0),
                     inputs: vec![VariableId(2)],
                 }),
-                Box::new(UpdateFunction::Variable { id: VariableId(2) }),
+                Box::new(UpdateFunction::Or(
+                    Box::new(UpdateFunction::Variable { id: VariableId(2) }),
+                    Box::new(UpdateFunction::Variable { id: VariableId(2) })
+                )),
             )),
         );
 
@@ -82,13 +85,13 @@ mod tests {
                 id: ParameterId(1),
                 inputs: vec![VariableId(1), VariableId(1)],
             }),
-            Box::new(UpdateFunction::Xor(
+            Box::new(UpdateFunction::Not(Box::new(UpdateFunction::Xor(
                 Box::new(UpdateFunction::Variable { id: VariableId(1) }),
                 Box::new(UpdateFunction::Parameter {
                     id: ParameterId(2),
                     inputs: Vec::new(),
                 }),
-            )),
+            )))),
         );
 
         let mut rg = RegulatoryGraph::new(&vec![
