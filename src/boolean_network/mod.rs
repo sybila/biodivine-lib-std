@@ -13,7 +13,6 @@ use std::collections::HashMap;
 pub mod builder;
 mod impl_boolean_network;
 mod impl_boolean_network_string_serialisation;
-mod impl_update_function;
 
 /// An index of a variable in the `variables` vector of a `BooleanNetwork`.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
