@@ -1,3 +1,4 @@
+use crate::boolean_network::builder::VariableIdIterator;
 use crate::boolean_network::{
     BooleanNetwork, Parameter, ParameterId, UpdateFunction, Variable, VariableId,
 };
@@ -5,6 +6,10 @@ use std::iter::Map;
 use std::ops::Range;
 
 impl BooleanNetwork {
+    pub fn num_vars(&self) -> usize {
+        return self.regulatory_graph.num_vars();
+    }
+
     pub fn get_update_function(&self, id: VariableId) -> &Option<UpdateFunction> {
         return &self.update_functions[id.0];
     }
@@ -21,7 +26,7 @@ impl BooleanNetwork {
         return self.parameter_to_index.get(param).map(|p| *p);
     }
 
-    pub fn variable_ids(&self) -> Map<Range<usize>, fn(usize) -> VariableId> {
+    pub fn variable_ids(&self) -> VariableIdIterator {
         return self.regulatory_graph.variable_ids();
     }
 

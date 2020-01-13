@@ -11,6 +11,8 @@
 
 use crate::boolean_network::{Effect, Regulation, Variable, VariableId};
 use std::collections::HashMap;
+use std::iter::Map;
+use std::ops::Range;
 
 mod display_update_function_template;
 mod impl_boolean_network_builder;
@@ -19,6 +21,8 @@ mod impl_regulatory_graph;
 mod impl_update_function_template;
 mod try_from_regulation_template;
 mod try_from_update_function_template;
+
+pub type VariableIdIterator = Map<Range<usize>, fn(usize) -> VariableId>;
 
 /// **(internal)** Update function template is an abstract syntax tree of an `UpdateFunction`.
 ///

@@ -1,10 +1,8 @@
-use crate::boolean_network::builder::{RegulationTemplate, RegulatoryGraph};
+use crate::boolean_network::builder::{RegulationTemplate, RegulatoryGraph, VariableIdIterator};
 use crate::boolean_network::{Effect, Regulation, Variable, VariableId};
 use crate::util::build_index_map;
 use std::collections::HashSet;
 use std::convert::TryFrom;
-use std::iter::Map;
-use std::ops::Range;
 
 impl RegulatoryGraph {
     /// Create a new empty `RegulatoryGraph` with given `variables`.
@@ -115,12 +113,36 @@ impl RegulatoryGraph {
         return self.variables.len();
     }
 
-    pub fn variable_ids(&self) -> Map<Range<usize>, fn(usize) -> VariableId> {
+    pub fn variable_ids(&self) -> VariableIdIterator {
         return (0..self.variables.len()).map(|i| VariableId(i));
     }
 
     pub fn regulations(&self) -> &Vec<Regulation> {
         return &self.regulations;
+    }
+
+    /// Count the number of variables regulating given `variable`.
+    pub fn num_regulators(&self, variable: VariableId) -> usize {
+        return self
+            .regulations
+            .iter()
+            .filter(|r| r.target == variable)
+            .count();
+    }
+
+    /// Obtain all variables that regulate the given variable.
+    pub fn get_regulators(&self, variable: VariableId) -> Vec<VariableId> {
+        return self
+            .regulations
+            .iter()
+            .filter_map(|r| {
+                if r.target != variable {
+                    None
+                } else {
+                    Some(r.source)
+                }
+            })
+            .collect();
     }
 }
 

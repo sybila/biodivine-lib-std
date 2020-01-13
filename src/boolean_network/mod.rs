@@ -10,17 +10,19 @@
 use crate::boolean_network::builder::RegulatoryGraph;
 use std::collections::HashMap;
 
+pub mod async_graph;
+pub mod bdd_params;
 pub mod builder;
 mod impl_boolean_network;
 mod impl_boolean_network_string_serialisation;
 
 /// An index of a variable in the `variables` vector of a `BooleanNetwork`.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct VariableId(usize);
+pub struct VariableId(pub(super) usize);
 
 /// An index of a parameter in the `parameters` vector of a `BooleanNetwork`.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct ParameterId(usize);
+pub struct ParameterId(pub(super) usize);
 
 /// Possible monotonous effect of a `Regulation` in a `BooleanNetwork`.
 ///

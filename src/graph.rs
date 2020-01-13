@@ -1,10 +1,32 @@
+use crate::boolean_network::VariableId;
 use crate::parameters::ParamSet;
 
-pub trait EvolutionOperator<P>
-where
-    P: ParamSet,
-{
-    type EdgeIterator: Iterator<Item = (usize, P)>;
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct StateId(pub(super) usize);
 
-    fn step(&self, source: usize) -> Self::EdgeIterator;
+pub trait EvolutionOperator<P: ParamSet> {
+    type EdgeIterator: Iterator<Item = (StateId, P)>;
+
+    fn step(&self, source: StateId) -> Self::EdgeIterator;
+}
+
+pub trait Graph<P: ParamSet> {
+    type ForwardEvolution: EvolutionOperator<P>;
+    type BackwardEvolution: EvolutionOperator<P>;
+    type StatesIterator: Iterator<Item = StateId>;
+
+    fn states(&self) -> Self::StatesIterator;
+    fn forward_evolution(&self) -> Self::ForwardEvolution;
+    fn backward_evolution(&self) -> Self::BackwardEvolution;
+}
+
+impl StateId {
+    pub fn is_set(&self, var: VariableId) -> bool {
+        return (self.0 >> var.0) & 1 == 1;
+    }
+
+    pub fn flip_bit(&self, var: VariableId) -> StateId {
+        let mask = 1 << var.0;
+        return StateId(self.0 ^ mask);
+    }
 }

@@ -1,4 +1,4 @@
-use crate::graph::EvolutionOperator;
+/*use crate::graph::EvolutionOperator;
 use crate::lock_free_array::LockFreeArray;
 use crate::lock_free_array_queue::LockFreeArrayQueue;
 use crate::parameters::ParamSet;
@@ -32,12 +32,12 @@ where
                         for (successor, edge_params) in graph.step(next) {
                             let transfer_params = result.get(next).intersect(&edge_params);
                             let current = result.get(successor);
-                            if transfer_params.is_subset(current) {
+                            if transfer_params.is_subset_of(current) {
                                 continue;
                             }
                             let update = result.update(successor, |value| {
                                 let new_value = value.union(&transfer_params);
-                                let is_new = new_value.is_subset(value);
+                                let is_new = new_value.is_subset_of(value);
                                 *value = new_value;
                                 is_new
                             });
@@ -69,3 +69,4 @@ where
     }
     return actual_result;
 }
+*/
