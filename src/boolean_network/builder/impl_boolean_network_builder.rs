@@ -47,7 +47,7 @@ impl BooleanNetwork {
 
         let parameters = update_function.extract_parameters();
 
-        // Add parameters into the network if needed.
+        // Check if parameters are used correctly
         for p_in_f in &parameters {
             if self.regulatory_graph.get_variable_id(p_in_f.name.as_str()) != None {
                 return Err(format!("Can't add update function for {}. {} can't be both a parameter and a variable.", variable, p_in_f.name));
@@ -61,11 +61,6 @@ impl BooleanNetwork {
                         variable, p_in_f.name, p_in_f.cardinality, p_in_bn.cardinality
                     ));
                 }
-            } else {
-                // This is a new parameter - add it.
-                self.parameter_to_index
-                    .insert(p_in_f.name.clone(), ParameterId(self.parameters.len()));
-                self.parameters.push(p_in_f.clone());
             }
         }
 
@@ -92,7 +87,16 @@ impl BooleanNetwork {
             }
         }
 
-        // Now we can actually build the update function.
+        // Actually add new parameters now that everything is verified.
+        for p_in_f in &parameters {
+            if self.get_parameter_id(p_in_f.name.as_str()) == None {
+                self.parameter_to_index
+                    .insert(p_in_f.name.clone(), ParameterId(self.parameters.len()));
+                self.parameters.push(p_in_f.clone());
+            }
+        }
+
+        // Now we can build the update function.
         let update_function = *update_function.build(
             &self.regulatory_graph.variable_to_index,
             &self.parameter_to_index,
@@ -102,4 +106,32 @@ impl BooleanNetwork {
 
         return Ok(());
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::boolean_network::builder::RegulatoryGraph;
+    use crate::boolean_network::BooleanNetwork;
+
+    #[test]
+    fn test_invalid_update_function() {
+        let mut rg = RegulatoryGraph::new(&vec!["a".to_string(), "b".to_string()]);
+        rg.add_regulation_string("a -> b").unwrap();
+        rg.add_regulation_string("b -| a").unwrap();
+
+        let mut bn = BooleanNetwork::new(rg);
+
+        // unknown variable
+        assert!(bn.add_update_function("c", "!a").is_err());
+        bn.add_update_function("a", "p => b").unwrap();
+        // duplicate function
+        assert!(bn.add_update_function("a", "!a").is_err());
+        // name clash
+        assert!(bn.add_update_function("b", "a & a()").is_err());
+        // cardinality clash
+        assert!(bn.add_update_function("b", "p(a) => a").is_err());
+        // missing regulation
+        assert!(bn.add_update_function("b", "p(b) => a").is_err());
+    }
+
 }
