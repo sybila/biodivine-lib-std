@@ -14,6 +14,10 @@ impl BooleanNetwork {
         return &self.update_functions[id.0];
     }
 
+    pub fn get_variable_id(&self, id: &str) -> Option<VariableId> {
+        return self.regulatory_graph.get_variable_id(id);
+    }
+
     pub fn get_variable(&self, id: VariableId) -> &Variable {
         return self.regulatory_graph.get_variable(id);
     }
