@@ -1,13 +1,10 @@
-use crate::boolean_network::{BooleanNetwork, ParameterId, VariableId};
-use crate::graph::StateId;
+use crate::boolean_network::VariableId;
 use crate::parameters::ParamSet;
-use biodivine_lib_bdd::{
-    Bdd, BddValuationIterator, BddVariable, BddVariableSet, BddVariableSetBuilder,
-};
+use biodivine_lib_bdd::{Bdd, BddVariable, BddVariableSet};
 
 mod impl_bdd_parameter_encoder;
 
-#[derive(Clone, Debug, Hash)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct BddParams {
     pub(super) bdd: Bdd,
 }
@@ -48,6 +45,12 @@ impl ParamSet for BddParams {
     }
 
     fn is_empty(&self) -> bool {
-        return !self.bdd.is_false();
+        return self.bdd.is_false();
+    }
+}
+
+impl BddParams {
+    pub fn cardinality(&self) -> f64 {
+        return self.bdd.cardinality();
     }
 }

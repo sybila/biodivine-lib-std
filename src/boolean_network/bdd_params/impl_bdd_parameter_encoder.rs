@@ -100,7 +100,7 @@ impl BddParameterEncoder {
 #[cfg(test)]
 mod tests {
     use crate::boolean_network::bdd_params::BddParameterEncoder;
-    use crate::boolean_network::{BooleanNetwork, ParameterId, VariableId};
+    use crate::boolean_network::{BooleanNetwork, VariableId};
     use crate::graph::StateId;
     use std::convert::TryFrom;
 
