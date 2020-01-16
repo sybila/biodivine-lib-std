@@ -1,15 +1,17 @@
-use std::hash::Hash;
+use super::State;
 
-trait State: Hash + Eq {}
+trait Params: Clone {}
 
 trait EvolutionOperator {
     type State: State;
-    type Iterator: Iterator<Item = Self::State>;
-    fn step(&self, source: &Self::State) -> Self::Iterator;
+    type Params: Params;
+    type Iterator: Iterator<Item = (Self::State, Self::Params)>;
+    fn step(&self, source: Self::State) -> Self::Iterator;
 }
 
 trait Graph {
     type State: State;
+    type Params: Params;
     type States: Iterator<Item = Self::State>;
     type FwdEdges: EvolutionOperator;
     type BwdEdges: EvolutionOperator;
@@ -21,10 +23,9 @@ trait Graph {
 
 trait StateSet {
     type State: State;
-    type Iterator: Iterator<Item = Self::State>;
+    type Params: Params;
+    type Iterator: Iterator<Item = (Self::State, Self::Params)>;
 
     fn iter(&self) -> Self::Iterator;
-    fn contains(&self, state: &Self::State) -> bool;
+    fn contains(&self, state: &Self::State) -> &Self::Params;
 }
-
-pub mod param;

@@ -1,4 +1,3 @@
-use crate::boolean_network::VariableId;
 use crate::parameters::ParamSet;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -21,12 +20,12 @@ pub trait Graph<P: ParamSet> {
 }
 
 impl StateId {
-    pub fn is_set(&self, var: VariableId) -> bool {
-        return (self.0 >> var.0) & 1 == 1;
+    pub fn is_set(&self, var: usize) -> bool {
+        return (self.0 >> var) & 1 == 1;
     }
 
-    pub fn flip_bit(&self, var: VariableId) -> StateId {
-        let mask = 1 << var.0;
+    pub fn flip_bit(&self, var: usize) -> StateId {
+        let mask = 1 << var;
         return StateId(self.0 ^ mask);
     }
 }

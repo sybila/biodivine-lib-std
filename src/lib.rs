@@ -7,8 +7,6 @@ pub mod reachability;
 
 pub mod util;
 
-pub mod boolean_network;
-
 /// A simple `StateId` iterator used for graphs where the states are consecutive integers.
 pub struct RangeStateIterator {
     next: usize,
