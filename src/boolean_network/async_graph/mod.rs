@@ -9,7 +9,7 @@ mod impl_evolution_operators;
 
 pub struct BooleanAsyncGraph {
     network: BooleanNetwork,
-    parameter_encoder: BddParameterEncoder,
+    parameter_encoder: BddParasmeterEncoder,
     unit_set: BddParams,
 }
 
