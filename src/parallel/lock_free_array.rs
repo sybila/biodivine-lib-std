@@ -1,4 +1,4 @@
-use std::mem::forget;
+/*use std::mem::forget;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 pub struct LockFreeArray<I>
@@ -75,7 +75,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::lock_free_array::LockFreeArray;
+    use super::LockFreeArray;
     use crossbeam::thread::scope;
 
     #[test]
@@ -147,3 +147,4 @@ mod tests {
         assert_eq!(10_000 * 10, *array.get(3));
     }
 }
+*/

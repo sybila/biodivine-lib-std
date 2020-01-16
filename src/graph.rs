@@ -1,31 +1,22 @@
-use crate::parameters::ParamSet;
+use crate::State;
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct StateId(pub(super) usize);
-
-pub trait EvolutionOperator<P: ParamSet> {
-    type EdgeIterator: Iterator<Item = (StateId, P)>;
-
-    fn step(&self, source: StateId) -> Self::EdgeIterator;
+/// `EvolutionOperator`s represent an evolution of non-deterministic dynamical system with
+/// discrete time, i.e. given a current state, they provide possible states in the next time step.
+pub trait EvolutionOperator {
+    type State: State;
+    type Iterator: Iterator<Item = Self::State>;
+    fn step(&self, current: Self::State) -> Self::Iterator;
 }
 
-pub trait Graph<P: ParamSet> {
-    type ForwardEvolution: EvolutionOperator<P>;
-    type BackwardEvolution: EvolutionOperator<P>;
-    type StatesIterator: Iterator<Item = StateId>;
+/// `Graph` is a dynamical system with finite state space which can be explored forward
+/// and backward in time.
+pub trait Graph {
+    type State: State;
+    type States: Iterator<Item = Self::State>;
+    type FwdEdges: EvolutionOperator;
+    type BwdEdges: EvolutionOperator;
 
-    fn states(&self) -> Self::StatesIterator;
-    fn forward_evolution(&self) -> Self::ForwardEvolution;
-    fn backward_evolution(&self) -> Self::BackwardEvolution;
-}
-
-impl StateId {
-    pub fn is_set(&self, var: usize) -> bool {
-        return (self.0 >> var) & 1 == 1;
-    }
-
-    pub fn flip_bit(&self, var: usize) -> StateId {
-        let mask = 1 << var;
-        return StateId(self.0 ^ mask);
-    }
+    fn states(&self) -> Self::States;
+    fn fwd(&self) -> Self::FwdEdges;
+    fn bwd(&self) -> Self::BwdEdges;
 }

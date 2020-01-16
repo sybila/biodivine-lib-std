@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicBool, Ordering};
+/*use std::sync::atomic::{AtomicBool, Ordering};
 
 pub struct LockFreeArrayQueue {
     items: Vec<AtomicBool>,
@@ -38,7 +38,7 @@ impl LockFreeArrayQueue {
 
 #[cfg(test)]
 mod tests {
-    use crate::lock_free_array_queue::LockFreeArrayQueue;
+    use super::LockFreeArrayQueue;
     use crossbeam::scope;
     use std::sync::atomic::{AtomicU32, Ordering};
 
@@ -105,3 +105,4 @@ mod tests {
         assert!(total_actual_ops.load(Ordering::SeqCst) > 0);
     }
 }
+*/
