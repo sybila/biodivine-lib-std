@@ -42,7 +42,7 @@ pub trait EvolutionOperator {
 /// but that can be cumbersome because the sense of "direction" becomes diluted. In other words,
 /// it is easy to lose track of what is going on if you see something like `let fwd = bwd;`...
 pub trait InvertibleEvolutionOperator: EvolutionOperator {
-    type InvertedOperator: EvolutionOperator;
+    type InvertedOperator: EvolutionOperator<State=Self::State, Params=Self::Params>;
     fn invert(&self) -> Self::InvertedOperator;
 }
 
