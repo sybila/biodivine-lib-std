@@ -2,7 +2,6 @@ use std::hash::Hash;
 
 mod algorithms;
 pub mod graph;
-mod parallel; // not stabilised yet
 pub mod param_graph;
 pub mod util; // not stabilised yet
 

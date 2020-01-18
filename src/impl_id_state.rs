@@ -48,5 +48,4 @@ mod tests {
         let flipped = state.flip_bit(3);
         assert_eq!(0b11110 as usize, flipped.into());
     }
-
 }

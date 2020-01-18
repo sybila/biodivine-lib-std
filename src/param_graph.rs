@@ -29,6 +29,22 @@ pub trait EvolutionOperator {
     fn step(&self, current: Self::State) -> Self::Iterator;
 }
 
+/// A variant of the `EvolutionOperator` that can be inverted.
+///
+/// This is useful if you have algorithms that need to follow edges in both directions but have
+/// some "preferred" sense of direction. For example, a model checking algorithm can verify
+/// formulas that mix past and future. It typically starts in "future" mode, but can switch
+/// to "past" depending on the formula. If the operator is invertible, one can just
+/// invert the evolution operator in the algorithm without caring whether we are working on
+/// past or future. In other words, the sense of time is relative.
+///
+/// Technically, this can be also achieved by switching between `fwd` and `bwd` in the algorithm,
+/// but that can be cumbersome because the sense of "direction" becomes diluted. In other words,
+/// it is easy to lose track of what is going on if you see something like `let fwd = bwd;`...
+pub trait InvertibleEvolutionOperator: EvolutionOperator {
+    fn invert(&self) -> Self::Iterator;
+}
+
 /// A parametrised variant of a `Graph`.
 pub trait Graph {
     type State: State;
@@ -40,4 +56,9 @@ pub trait Graph {
     fn states(&self) -> Self::States;
     fn fwd(&self) -> Self::FwdEdges;
     fn bwd(&self) -> Self::BwdEdges;
+}
+
+pub trait InvertibleGraph: Graph {
+    type FwdEdges: InvertibleEvolutionOperator;
+    type BwdEdges: InvertibleEvolutionOperator;
 }
