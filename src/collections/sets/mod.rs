@@ -54,18 +54,6 @@ use std::hash::Hash;
 mod _impl_explicit_set;
 mod _impl_set_for_option_set;
 
-/*
-   Future work:
-    - Set approximations - we would like to encode in the type system that a collections.sets
-   contains over/under approximation of a real element collections.sets and reflect this in the operations
-   (e.g. union of two over-approximations is an over-approximation, but subtraction is not)
-    - Element based operation - can we have add/remove/etc. for some implementations?
-    - Maybe we could deconstruct the operations into something like arithmetics (independent
-    traits for Union/Intersection/etc.). This would also make it possible to provide blanket
-    implementations which would implicitly consider Option<Set> or Err as empty...
-    - Have some kind of "cardinality" operator that can return, well, mostly anything, but probably an f64?
-*/
-
 /// `Set` is a collection of elements. The elements do not have to be instantiable and the
 /// collections.sets can be infinite or even uncountable. However, we generally assume that collections.sets can be
 /// cloned, tested for inclusion/equality and tested for emptiness.
