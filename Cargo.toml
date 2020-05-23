@@ -4,21 +4,36 @@ version = "0.1.0"
 authors = ["Samuel Pastva <daemontus@gmail.com>"]
 edition = "2018"
 
-# Enable rich docs for some online docs autogen services.
-[package.metadata.docs.rs]
-rustdoc-args = ["--html-in-header", "docs-head.html"]
-
 [dependencies]
 
+[dev-dependencies]
+
 [features]
-# With shields_up you enable explicit assertions of pre/post conditions and invariants in critical
-# codepaths that cannot be proved safe by the rust compiler. Every such assertion should be proven
-# correct by an associated comment. We use shields_up instead of debug_assertion to have it separated
-# from debug mode (shields_up is not strictly for debugging, its a general safety net / troubleshooting
-# measure). For official releases and benchmarks, you should disable shields_up to avoid unnecessary
-# performance penalty. Avoid introducing dead code when shields_up is enabled - this will mess with test coverage.
+# Use this config flag to enable checks or validation that should not be necessary 
+# (for example, the check can fail only if function contract is violated).
+# In production/benchmark releases, this feature should be disabled to enable best
+# performance. Avoid introducing dead code when shields_up is on, to avoid 
+# dead code coverage issues.
 shields_up = []
 
-default = ["shields_up"]
+# Enable rich docs for some online docs autogen services.
+[package.metadata.docs.rs]
+rustdoc-args = ["--html-in-header", "./res/docs-head.html"]
 
-[dev-dependencies]
+# Before publishing, consider filling out and uncommenting these values.
+# Also see https://doc.rust-lang.org/cargo/reference/manifest.html for reference.
+#
+# [package]
+# description = "Some simple plaintext description"
+# documentation = "https://url.to/docs"
+# homepage = "https://url.to/homepage"
+# repository = "https://url.to/repo"
+# readme = "path/to/readme.md"
+# keywords = ["...", "..."] (up to five)
+# categories = ["...", "..."] (see crates.io/category_slugs)
+# license = "..." (valid SPDX 2.1 license name)
+#
+# [badges]
+# travis-ci = { repository = "user/repo" }
+# codecov = { repository = "user/repo" }
+# maintenance = { status = "..." } 
