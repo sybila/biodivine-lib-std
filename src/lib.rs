@@ -1,5 +1,6 @@
 use std::hash::Hash;
 
+pub mod collections;
 pub mod graph;
 pub mod param_graph;
 pub mod util; // not stabilised yet
