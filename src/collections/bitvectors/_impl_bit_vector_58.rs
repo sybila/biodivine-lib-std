@@ -75,7 +75,7 @@ mod tests {
     use crate::collections::bitvectors::{BitVector, BitVector58};
 
     #[test]
-    fn test_array_bit_vector() {
+    fn test_bit_vector_58() {
         let mut bv = BitVector58::empty(10);
         assert_eq!(vec![false; 10], bv.values());
         bv.set(2, true);
@@ -96,5 +96,19 @@ mod tests {
         assert!(!bv.get(6));
         bv.flip(2);
         assert!(!bv.get(2));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_bit_vector_58_too_big() {
+        BitVector58::empty(60);
+    }
+
+    #[test]
+    #[should_panic]
+    #[cfg(shields_up)]
+    fn test_bit_vector_58_invalid_access() {
+        let mut bv = BitVector58::empty(30);
+        bv.flip(45);
     }
 }

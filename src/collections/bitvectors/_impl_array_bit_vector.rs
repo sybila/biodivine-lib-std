@@ -115,4 +115,12 @@ mod tests {
         bv.flip(2);
         assert!(!bv.get(2));
     }
+
+    #[test]
+    #[should_panic]
+    #[cfg(shields_up)]
+    fn test_array_bit_vector_invalid_access() {
+        let mut b = ArrayBitVector::empty(80);
+        b.flip(100);
+    }
 }
