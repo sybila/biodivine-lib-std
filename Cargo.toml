@@ -5,6 +5,8 @@ authors = ["Samuel Pastva <daemontus@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+# Chosen because it seems to be one of the simplest implementations right now - maybe we can do it in-house later?
+bitvector = "0.1.5"
 
 [dev-dependencies]
 
