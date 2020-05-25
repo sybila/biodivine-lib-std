@@ -55,6 +55,12 @@ mod _impl_bit_vector_58;
 /// When implementing `Display` and `From<Vec<bool>>`, please consult `BitVector::display` and
 /// `BitVector::from_bool_vector`.
 pub trait BitVector: Clone + Eq + Display + From<Vec<bool>> {
+    /// If a `BitVector` implementation cannot handle arbitrary vector lengths, it can use this
+    /// method to declare the largest bitvector it can handle.
+    fn max_length() -> usize {
+        return std::usize::MAX;
+    }
+
     /// Create a new `BitVector` with the given length. Can panic if this implementation
     /// does not support the specified length. Once created, the length cannot be changed.
     fn empty(len: usize) -> Self;

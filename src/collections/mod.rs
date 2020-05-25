@@ -2,3 +2,4 @@
 
 pub mod bitvectors;
 pub mod sets;
+pub mod graphs;

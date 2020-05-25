@@ -16,6 +16,10 @@ impl BitVector58 {
 }
 
 impl BitVector for BitVector58 {
+    fn max_length() -> usize {
+        return 58;
+    }
+
     fn empty(len: usize) -> Self {
         if len > 58 {
             panic!("This implementation of BitVector supports only up-to 58 entries");
