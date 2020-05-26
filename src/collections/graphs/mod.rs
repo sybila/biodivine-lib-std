@@ -32,10 +32,9 @@
 //! trait for every such variant, we consider `EdgeLabels` and `VertexLabels` that facilitate this
 //! extra information.
 
-
-use std::hash::Hash;
 use crate::collections::bitvectors::BitVector58;
 use std::collections::HashMap;
+use std::hash::Hash;
 
 /// `EvolutionOperator` is essentially a function $\sigma: A -> 2^B$, i.e. taking an element $s \in A$
 /// and returning a subset $t \subseteq B$. For simplicity, the subset is represented as an
@@ -118,11 +117,11 @@ struct IdVertex(usize);
 
 // TODO: Implement example explicit graph and vertex storage...
 struct HashedVertices<D> {
-    storage: HashMap<D, VertexIndex>
+    storage: HashMap<D, IdVertex>,
 }
 
 struct ExplicitGraph<D> {
     hasher: HashedVertices<D>,
-    fwd_edges: HashMap<VertexIndex, Vec<VertexIndex>>,
-    bwd_edges: HashMap<VertexIndex, Vec<VertexIndex>>
+    fwd_edges: Vec<Vec<IdVertex>>,
+    bwd_edges: Vec<Vec<IdVertex>>,
 }

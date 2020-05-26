@@ -150,5 +150,7 @@ pub struct ArrayBitVector {
 /// A `BitVector` implementation that uses `u64` as the underlying representation and
 /// can therefore hold only up-to 58 values (remaining 6 bits store the vector length).
 /// Should be pretty fast though.
-#[derive(Clone, PartialEq, Eq, Hash)]
+///
+/// `BitVector58` is also `Copy`, because it is small enough to pass by value.
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct BitVector58(u64);
