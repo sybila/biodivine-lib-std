@@ -1,13 +1,13 @@
-use crate::parsers::tokens::TokenTemplate;
+use crate::parsers::tokens::TokenRule;
 use regex::{Captures, Regex};
 use std::fmt::{Debug, Formatter};
 
-impl<Payload> TokenTemplate<Payload> {
-    /// Create a new token template using given regex and a factory function.
+impl<Payload> TokenRule<Payload> {
+    /// Create a new token rule using given regex and a factory function.
     ///
     /// Regex will be prefixed with `^` anchor.
-    pub fn new(regex: &str, factory: fn(&Captures) -> Payload) -> TokenTemplate<Payload> {
-        return TokenTemplate {
+    pub fn new(regex: &str, factory: fn(&Captures) -> Payload) -> TokenRule<Payload> {
+        return TokenRule {
             regex: Regex::new(format!("^{}", regex).as_str()).unwrap(),
             factory,
         };
@@ -25,7 +25,7 @@ impl<Payload> TokenTemplate<Payload> {
 }
 
 /// Since payload factories cannot be printed, we at least display the template regex.
-impl<Payload> Debug for TokenTemplate<Payload> {
+impl<Payload> Debug for TokenRule<Payload> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
         return write!(f, "TokenTemplate({:?})", self.regex);
     }
@@ -33,27 +33,28 @@ impl<Payload> Debug for TokenTemplate<Payload> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parsers::tokens::TokenTemplate;
+    use crate::const_token;
+    use crate::parsers::tokens::TokenRule;
 
     #[test]
     pub fn test_match_literal_template() {
-        let eq_op_template = TokenTemplate::<Option<String>>::new("<=>", |_| None);
+        let eq_op_template = const_token!("<=>", 10);
         let matched = eq_op_template.try_match("<==>");
         assert!(matched.is_none());
         let (captures, payload) = eq_op_template.try_match("<=> x").unwrap();
         assert_eq!(captures.get(0).unwrap().as_str(), "<=>");
-        assert!(payload.is_none());
-        println!("{:?}", eq_op_template); // sholud print TokenTemplate("^<=>")
+        assert_eq!(payload, 10);
+        println!("{:?}", eq_op_template); // should print TokenTemplate("^<=>")
     }
 
     #[test]
     pub fn test_match_identifier_template() {
         // Token which matches some identifier starting with '$'
-        let id_template = TokenTemplate::<Option<String>>::new(r"\$([a-z]+)", |c| {
-            return Some(c.get(1).unwrap().as_str().to_string());
+        let id_template = TokenRule::<String>::new(r"\$([a-z]+)", |c| {
+            return c.get(1).unwrap().as_str().to_string();
         });
         let (captures, payload) = id_template.try_match("$hello there").unwrap();
         assert_eq!(captures.get(0).unwrap().as_str(), "$hello");
-        assert_eq!(payload, Some("hello".to_string()));
+        assert_eq!(payload, "hello".to_string());
     }
 }
