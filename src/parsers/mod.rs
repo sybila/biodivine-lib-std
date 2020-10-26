@@ -6,7 +6,20 @@
 //! JSON or some standard format, just use some standard library please. This is mostly for
 //! small ad-hoc formats (logical formulas, graph descriptions, etc.).
 //!
-//! Our parsing architecture consists of three "tiers":
+//! Why not use existing rust libraries for custom parsing?
+//!
+//! For grammar-based parsers, the reason
+//! is mostly that they are hard to re-use efficiently. We currently have a lot of logic-like
+//! and math-like langauges that need to be maintained and they all share common features which
+//! would have to be re-implemented in typical grammar-based parsers.
+//!
+//! For parser combinators, the reasons are mostly in error handling and support for tooling.
+//! By separating the process into multiple tiers, we provide a way to better utilize intermediate
+//! results for static analysis, error recovery or when building interactive editors.
+//!
+//! Our parsing architecture consists of three "tiers" where each extracts a specific type of
+//! structural properties from the input. Each tier also supports parsing with error recovery,
+//! making for example live editors with highlighting possible.
 //!
 //! ### Tier 0 - `Tokenizer`
 //!
@@ -94,7 +107,35 @@
 //! assert_eq!(groups[4].children().unwrap().len(), 3); // 'hello' '+' '-12'
 //! ```
 //!
+//! Aside from basic parenthesis-like groups, `TokenTreeBuilders` support many advanced use
+//! cases, like matching tags or labeled groups (see module docs for examples).
+//!
+//! ### Tier 2 - Parser combinators
+//!
+//! Last tier is the most versitile one, but also the most loosely defined. Here, we provide
+//! a set of utility methods based on the idea of parser combinators. This is the least developed
+//! part of the module and can evolve more once it is clearer what functionality if truly
+//! useful here.
+//!
 
 pub mod groups;
+pub mod parsers;
 pub mod tokens;
-//pub mod parsers;
+
+pub mod tokens2;
+
+mod v2;
+
+mod _impl_parse_error;
+
+/// Represents an error during a grouping process.
+///
+/// If has reference to the positions of opening/closing tokens of the problematic
+/// group, if such tokens were present (for example, for unclosed group that leaks past the
+/// end of file, no ending position is given). At least one position should be specified.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ParseError {
+    pub starts_at: Option<usize>,
+    pub ends_at: Option<usize>,
+    pub message: String,
+}

@@ -25,4 +25,29 @@ impl<Payload: Clone> TokenTree<'_, Payload> {
             None
         };
     }
+
+    pub fn starts_at(&self) -> usize {
+        return match self {
+            TokenTree::Value(token) => token.starts_at,
+            TokenTree::Group { open, .. } => open.starts_at,
+        };
+    }
+
+    pub fn ends_at(&self) -> usize {
+        let t = self.last_token();
+        return t.starts_at + t.data.len();
+    }
+
+    pub fn last_token(&self) -> Token<Payload> {
+        return match self {
+            TokenTree::Value(t) => t.clone(),
+            TokenTree::Group {
+                open, close, data, ..
+            } => close
+                .as_ref()
+                .cloned()
+                .or(data.last().map(|f| f.last_token()))
+                .unwrap_or(open.clone()),
+        };
+    }
 }

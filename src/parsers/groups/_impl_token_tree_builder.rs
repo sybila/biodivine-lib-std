@@ -1,5 +1,6 @@
 use crate::parsers::groups::*;
 use crate::parsers::tokens::Token;
+use crate::parsers::ParseError;
 
 /// **(internal)** This little abomination is used to hold information about unfinished groups.
 ///
@@ -32,7 +33,7 @@ impl<Payload: Clone> TokenTreeBuilder<Payload> {
     pub fn group_tokens<'a, 'b>(
         &'a self,
         tokens: &[Token<'b, Payload>],
-    ) -> Result<TokenForest<'b, Payload>, GroupError> {
+    ) -> Result<TokenForest<'b, Payload>, ParseError> {
         let mut root_forest: TokenForest<Payload> = Vec::new();
         let mut group_stack: GroupStack<Payload> = Vec::new();
         for token in tokens {
@@ -47,7 +48,7 @@ impl<Payload: Clone> TokenTreeBuilder<Payload> {
                 // If this wasn't a closing token for the current group, check if it can close something else.
                 if let Some(rule) = self.can_close(token) {
                     // In which case, this is an error.
-                    return Err(GroupError::unexpected_group_end(rule, token));
+                    return Err(ParseError::unexpected_group_end(rule, token));
                 }
                 // If it does not open or close current or any other group, we can push it to current forest:
                 let value = TokenTree::Value(token.clone());
@@ -55,7 +56,7 @@ impl<Payload: Clone> TokenTreeBuilder<Payload> {
             }
         }
         return if let Some((rule, token, _)) = group_stack.last() {
-            Err(GroupError::unclosed_group(rule, token, None))
+            Err(ParseError::unclosed_group(rule, token, None))
         } else {
             Ok(root_forest)
         };
@@ -77,10 +78,10 @@ impl<Payload: Clone> TokenTreeBuilder<Payload> {
     pub fn group_tokens_with_recovery<'a, 'b>(
         &'a self,
         tokens: &[Token<'a, Payload>],
-    ) -> (TokenForest<'a, Payload>, Vec<GroupError>) {
+    ) -> (TokenForest<'a, Payload>, Vec<ParseError>) {
         let mut root_forest: TokenForest<Payload> = Vec::new();
         let mut group_stack: GroupStack<Payload> = Vec::new();
-        let mut errors: Vec<GroupError> = Vec::new();
+        let mut errors: Vec<ParseError> = Vec::new();
         for token in tokens {
             if let Some(template) = self.opens(token) {
                 group_stack.push((template, token, Vec::new()));
@@ -115,13 +116,13 @@ impl<Payload: Clone> TokenTreeBuilder<Payload> {
                                 break;
                             } else {
                                 // This rule is forcibly closed - emit it into the tree, but emit also a group error.
-                                errors.push(GroupError::unclosed_group(rule, start, Some(token)));
+                                errors.push(ParseError::unclosed_group(rule, start, Some(token)));
                                 Self::push_result(group, &mut root_forest, &mut group_stack);
                             }
                         }
                     } else {
                         // There is no way this token finishes anything on the stack
-                        errors.push(GroupError::unexpected_group_end(closes, token));
+                        errors.push(ParseError::unexpected_group_end(closes, token));
                     }
                 } else {
                     // If it does not open or close current or any other group, we can push it to current forest:
@@ -140,7 +141,7 @@ impl<Payload: Clone> TokenTreeBuilder<Payload> {
                 data: forest,
             };
             Self::push_result(group, &mut root_forest, &mut group_stack);
-            tail_errors.push(GroupError::unclosed_group(rule, start, None));
+            tail_errors.push(ParseError::unclosed_group(rule, start, None));
         }
         // We want to emit errors from first to last, so we have to emit error in revers order
         // (because we have to push results in stack order, but this is not error order)

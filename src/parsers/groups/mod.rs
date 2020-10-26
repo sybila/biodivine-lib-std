@@ -114,7 +114,6 @@
 
 use crate::parsers::tokens::Token;
 
-mod _impl_group_error;
 mod _impl_group_rule;
 mod _impl_token_tree;
 mod _impl_token_tree_builder;
@@ -138,7 +137,7 @@ mod _macro_group_rule;
 /// to create rules like `<tag>` ... `</tag>` where we correctly recognize that opening and closing
 /// `tag` are the same.
 pub struct GroupRule<Payload: Clone> {
-    name: String,
+    pub name: String,
     opens: fn(&Token<Payload>) -> bool,
     closes: fn(&Token<Payload>) -> bool,
     is_group: fn(&Token<Payload>, &Token<Payload>) -> bool,
@@ -161,18 +160,6 @@ pub enum TokenTree<'a, Payload: Clone> {
 
 /// Alias for a vector of `TokenTree`s.
 pub type TokenForest<'a, Payload> = Vec<TokenTree<'a, Payload>>;
-
-/// Represents an error during a grouping process.
-///
-/// If has reference to the positions of opening/closing tokens of the problematic
-/// group, if such tokens were present (for example, for unclosed group that leaks past the
-/// end of file, no ending position is given). At least one position should be specified.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct GroupError {
-    pub starts_at: Option<usize>,
-    pub ends_at: Option<usize>,
-    pub message: String,
-}
 
 /// Transforms a stream of tokens into a tree-like structure based on the given group rules.
 pub struct TokenTreeBuilder<Payload: Clone> {
