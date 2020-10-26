@@ -4,7 +4,6 @@ use std::hash::Hash;
 pub mod collections;
 pub mod graph;
 pub mod logic;
-pub mod parsers;
 
 // Old stuff (do not delete until release because people are using it!)
 pub mod param_graph;
