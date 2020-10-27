@@ -9,7 +9,7 @@
 //! are some concerns for overall memory consumption and efficiency.
 //!
 //! ```rust
-//! use biodivine_lib_std::collections::bitvectors::{BitVector58, BitVector};
+//! use biodivine_std_core::collections::bitvectors::{BitVector58, BitVector};
 //! // Create a BitVector of length 4 initialized to false.
 //! let mut bv = BitVector58::empty(4);
 //! assert_eq!(4, bv.len());
@@ -28,7 +28,7 @@
 //! and `Vec<usize>` (indices of `true` item in the `BitVector`).
 //!
 //! ```rust
-//! use biodivine_lib_std::collections::bitvectors::{BitVector58, BitVector};
+//! use biodivine_std_core::collections::bitvectors::{BitVector58, BitVector};
 //! // Convert bool vector to BitVector.
 //! let bv = BitVector58::from(vec![false, true, true, false]);
 //! // And back to bool vector.

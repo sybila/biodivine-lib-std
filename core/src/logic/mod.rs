@@ -27,21 +27,21 @@ pub enum BoolExpr<A: Eq + Clone + Debug> {
     },
 }
 
-
 trait TokenRule {
-    type State : Default + Clone + Eq;
+    type State: Default + Clone + Eq;
     fn name(&self) -> &str;
     fn try_read_token(&self, state: &mut Self::State, data: &str) -> Option<(String, Vec<String>)>;
 }
 
-trait StaticTokenRule : TokenRule<State=()> {
+trait StaticTokenRule: TokenRule<State = ()> {
     fn try_read_token_static(&self, data: &str) -> Option<(String, Vec<String>)> {
-        return TokenRule::try_read_token(self, &mut(), data);
+        return TokenRule::try_read_token(self, &mut (), data);
     }
 }
 
 struct SwitchRule<L: TokenRule, R: TokenRule> {
-    left: L, right: R
+    left: L,
+    right: R,
 }
 
 struct StaticRule {}
@@ -59,7 +59,9 @@ impl<L: TokenRule, R: TokenRule> TokenRule for SwitchRule<L, R> {
         } else if state.1 != R::State::default() {
             return self.right.try_read_token(&mut state.1, data);
         } else {
-            return self.left.try_read_token(&mut state.0, data)
+            return self
+                .left
+                .try_read_token(&mut state.0, data)
                 .or_else(|| self.right.try_read_token(&mut state.1, data));
         }
     }
@@ -78,7 +80,7 @@ impl TokenRule for StaticRule {
 }
 
 struct RuleSequence {
-    items: Vec<Box<dyn StaticTokenRule>>
+    items: Vec<Box<dyn StaticTokenRule>>,
 }
 
 impl TokenRule for RuleSequence {

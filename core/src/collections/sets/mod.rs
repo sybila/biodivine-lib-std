@@ -8,7 +8,7 @@
 //! Basic set-like operations are provided:
 //!
 //! ```rust
-//! use biodivine_lib_std::collections::sets::{ExplicitSet, Set};
+//! use biodivine_std_core::collections::sets::{ExplicitSet, Set};
 //! let a = ExplicitSet::new_with_items(vec!["a", "b", "hello"]);
 //! let b = ExplicitSet::new_with_items(vec!["hello", "my", "darling"]);
 //! let i = ExplicitSet::new_with_items(vec!["hello"]);
@@ -27,7 +27,7 @@
 //! allows *testing for their presence* or *picking a single representing element*:
 //!
 //! ```rust
-//! use biodivine_lib_std::collections::sets::{ExplicitSet, ElementSet, Set};
+//! use biodivine_std_core::collections::sets::{ExplicitSet, ElementSet, Set};
 //! let a = ExplicitSet::new_with_items(vec!["a", "b"]);
 //! assert!(a.contains(&"b"));
 //! assert!(a.contains(&a.pick().unwrap()));
@@ -40,7 +40,7 @@
 //! all elements in the sets:
 //!
 //! ```rust
-//! use biodivine_lib_std::collections::sets::{ExplicitSet, IterableSet};
+//! use biodivine_std_core::collections::sets::{ExplicitSet, IterableSet};
 //! let a = ExplicitSet::new_with_items(vec!["a", "b"]);
 //! for x in a.iter() {
 //!     assert!(x == "a" || x == "b");
