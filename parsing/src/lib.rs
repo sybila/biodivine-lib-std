@@ -1,5 +1,5 @@
+mod _impl_iterator_for_extras;
 mod _impl_token;
-mod _impl_token_iterator_and_indexing;
 mod _impl_token_tree;
 
 /// Annotated subsequence of the input string.
@@ -9,12 +9,10 @@ mod _impl_token_tree;
 /// metadata provided by the rule which created it.
 ///
 /// The token can be declared to be an *error token*. Then it must also have
-/// an associated human readable error message.
+/// an associated human readable `error_message`.
 ///
-/// Note that token `value` can be empty. This typically does not happen
-/// directly in the tokenizer but is introduced as error handling
-/// measure in further processing stages to propagate errors about missing
-/// content.
+/// Note that token `value` can be empty. This can be used to declare errors
+/// for missing values, but is more common later on for `TokenTrees`.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Token {
     starts_at: usize,
@@ -24,46 +22,51 @@ pub struct Token {
 
 /// A collection of tokens with some given structural hierarchy.
 ///
-/// Basic building blocks of a `TokenTree` are the `Literal`, which simply
-/// wraps an existing `Token`, and a `Sequence` which wraps together
-/// several other `TokenTrees`.
+/// `TokenTree` inherits most properties of `Token`, but adds a reference to its child trees
+/// (`children`) and its `TokenTreeType` (`type`). Child trees allow referencing other token
+/// trees deeper in the hierarchy. The number and structure of child trees is dictated by
+/// the tree type.
 ///
-/// `Group` and `Branch` allow more granular characterisation. `Group` declares
-/// three child `TokenTrees`: `open`, `content` and `close`. `Branch` also declares
-/// three children, but their semantics is different: `left`, `delimiter` and `right`.
+/// Properties `starts_at`, `rule`, `has_error`, `error_message` and `extras` work the same way
+/// as in `Token`. `TokenTree` has no `value`, but a `TokenTree` corresponding to a `Token`
+/// (`TokenTreeType::LITERAL`) can be converted back to a `Token` to obtain the value.
 ///
-/// While `Group` specifies that the `content` is enclosed in the `open` and `close`
-/// subtrees (i.e. `open` and `close` are matched, `content` is inferred), in `Branch`,
-/// the `delimiter` (matched) separates the `left` and `right` subtrees (inferred).
+/// Currently, there are four basic `TokenTreeTypes`:
+///  - `LITERAL`: Corresponds to a `Token`. Has no child trees.
+///  - `SEQUENCE`: General sequence with an arbitrary number of child trees.
+///  - `GROUP`: Three child trees — `open`, `close`, and `content`. The rules for
+/// creating groups match the `open` and `close` child trees and the `content` is inferred.
+///  - `BRANCH`: Also three child trees — `left`, `right` and `delimiter`. Contrary to `GROUP`,
+/// here `delimiter` is matched and `left/right` are inferred.
 ///
-/// Similar to `Token`, each `TokenTree` has a `rule` string which describes the rule
-/// from which it was created. Also, the same conditions about `error` rules apply
-/// (rule starting with an `error` must have a human readable error message).
+/// Note that both `LITERAL` and `SEQUENCE` types can contain empty `value` and `children`. This
+/// can happen as a result of error propagation (some rule creates empty token/sequence to
+/// declare some missing value), but it can be also a result of filtering, e.g. when removing
+/// comments or unused tokens.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum TokenTree {
-    Literal {
-        token: Token,
-    },
-    Sequence {
-        meta: Vec<String>,
-        items: Vec<TokenTree>,
-    },
-    Group {
-        meta: Vec<String>,
-        open: Box<TokenTree>,
-        close: Box<TokenTree>,
-        content: Box<TokenTree>,
-    },
-    Branch {
-        meta: Vec<String>,
-        delimiter: Box<TokenTree>,
-        left: Box<TokenTree>,
-        right: Box<TokenTree>,
-    },
+pub struct TokenTree {
+    tree_type: TokenTreeType,
+    starts_at: usize,
+    has_error: bool,
+    meta: Vec<String>, // [rule, value (if literal), message (if error), extras, ...]
+    // Group: [open, content, close]
+    // Branch: [left, delimiter, right]
+    // In general, should be sorted by order of appearance in the source string.
+    children: Vec<TokenTree>,
 }
 
-/// Iterator over token metadata.
-pub struct TokenExtras<'a> {
-    token: &'a Token,
+/// Possible types of a `TokenTree`. See `TokenTree` for explanation.
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum TokenTreeType {
+    LITERAL,
+    SEQUENCE,
+    GROUP,
+    BRANCH,
+}
+
+/// Iterator over metadata.
+pub struct Extras<'a> {
+    meta: &'a Vec<String>,
+    skip: usize,
     index: usize,
 }

@@ -1,203 +1,291 @@
-use crate::{Token, TokenTree};
+use crate::{Extras, Token, TokenTree, TokenTreeType};
+use std::ops::Index;
 
+/// Constructors for `TokenTrees`.
 impl TokenTree {
-    /// Create a new `Literal` token tree.
-    pub fn literal(token: Token) -> TokenTree {
-        return TokenTree::Literal { token };
+    /// Create a literal `TokenTree` from a `Token`.
+    pub fn new_literal(token: Token) -> TokenTree {
+        return TokenTree {
+            tree_type: TokenTreeType::LITERAL,
+            starts_at: token.starts_at,
+            has_error: false,
+            meta: token.meta,
+            children: vec![],
+        };
     }
 
-    /// Create a new `Sequence` token tree.
-    pub fn sequence(rule: String, items: Vec<TokenTree>) -> TokenTree {
-        if items.is_empty() {
-            panic!("Empty token sequences not allowed. Use empty token literal instead.");
+    /// Create a sequence of child `TokenTrees`.
+    pub fn new_sequence(rule: &str, children: Vec<TokenTree>) -> TokenTree {
+        if children.is_empty() {
+            panic!("Cannot create an empty sequence for {}.", rule);
         }
-        return TokenTree::Sequence {
-            meta: vec![rule],
-            items,
+        return TokenTree {
+            tree_type: TokenTreeType::SEQUENCE,
+            starts_at: children[0].starts_at(),
+            has_error: false,
+            meta: vec![rule.into()],
+            children,
         };
     }
 
-    /// Create a new `Group` token tree.
-    pub fn group(rule: String, open: TokenTree, content: TokenTree, close: TokenTree) -> TokenTree {
-        return TokenTree::Group {
-            meta: vec![rule],
-            open: Box::new(open),
-            close: Box::new(close),
-            content: Box::new(content),
+    /// Create a group `TokenTree`.
+    pub fn new_group(
+        rule: &str,
+        open: TokenTree,
+        content: TokenTree,
+        close: TokenTree,
+    ) -> TokenTree {
+        return TokenTree {
+            tree_type: TokenTreeType::GROUP,
+            starts_at: open.starts_at(),
+            has_error: false,
+            meta: vec![rule.into()],
+            children: vec![open, content, close],
         };
     }
 
-    /// Create a new `Branch` token tree.
-    pub fn branch(
-        rule: String,
+    /// Create a branch `TokenTree`.
+    pub fn new_branch(
+        rule: &str,
         left: TokenTree,
         delimiter: TokenTree,
         right: TokenTree,
     ) -> TokenTree {
-        return TokenTree::Branch {
-            meta: vec![rule],
-            left: Box::new(left),
-            right: Box::new(right),
-            delimiter: Box::new(delimiter),
+        return TokenTree {
+            tree_type: TokenTreeType::BRANCH,
+            starts_at: left.starts_at(),
+            has_error: false,
+            meta: vec![rule.into()],
+            children: vec![left, delimiter, right],
         };
     }
 
-    /// Add extra string data `value` to this token tree.
-    pub fn push_extra(&mut self, value: String) {
-        match self {
-            TokenTree::Literal { token } => token.push_extra(value),
-            TokenTree::Sequence { meta, .. } => meta.push(value),
-            TokenTree::Group { meta, .. } => meta.push(value),
-            TokenTree::Branch { meta, .. } => meta.push(value),
+    /// Take a `TokenTree` and return the same tree with an error.
+    pub fn with_error(mut self, message: &str) -> TokenTree {
+        if self.has_error {
+            panic!("Tree already has an error: {}.", self.error_message());
         }
-    }
-
-    /// Index of the first character of this token tree in the input string.
-    /// (This needs to traverse to the first available token in the tree)
-    pub fn starts_at(&self) -> usize {
-        match self {
-            TokenTree::Literal { token } => token.starts_at,
-            TokenTree::Sequence { items, .. } => items[0].starts_at(),
-            TokenTree::Group { open, .. } => open.starts_at(),
-            TokenTree::Branch { left, .. } => left.starts_at(),
-        }
-    }
-
-    /// Name of the rule that created this token tree.
-    pub fn rule(&self) -> &String {
-        match self {
-            TokenTree::Literal { token } => token.rule(),
-            TokenTree::Sequence { meta, .. } => &meta[0],
-            TokenTree::Group { meta, .. } => &meta[0],
-            TokenTree::Branch { meta, .. } => &meta[0],
-        }
-    }
-
-    /// A slice of string extras attached to this token tree.
-    pub fn extras(&self) -> &[String] {
-        return match self {
-            TokenTree::Literal { token } => token.extras(),
-            TokenTree::Sequence { meta, .. } => &meta[1..],
-            TokenTree::Group { meta, .. } => &meta[1..],
-            TokenTree::Branch { meta, .. } => &meta[1..],
-        };
-    }
-
-    /// Return a vector of references to direct child trees of this `TokenTree`.
-    pub fn children(&self) -> Vec<&TokenTree> {
-        return match self {
-            TokenTree::Literal { .. } => Vec::new(),
-            TokenTree::Sequence { items, .. } => items.iter().collect(),
-            TokenTree::Group {
-                open,
-                content,
-                close,
-                ..
-            } => vec![open, content, close],
-            TokenTree::Branch {
-                left,
-                delimiter,
-                right,
-                ..
-            } => vec![left, delimiter, right],
-        };
-    }
-
-    /// True if this is an error fragment.
-    pub fn is_error(&self) -> bool {
-        return self.rule().starts_with("error");
-    }
-
-    /// If this token is an error token, return its error message, otherwise return `None`.
-    pub fn error_message(&self) -> Option<&String> {
-        if !self.is_error() {
-            return None;
-        }
-        match self {
-            TokenTree::Literal { token } => token.error_message(),
-            TokenTree::Sequence { meta, .. } => meta.get(1),
-            TokenTree::Group { meta, .. } => meta.get(1),
-            TokenTree::Branch { meta, .. } => meta.get(1),
-        }
-    }
-
-    /// If this `TokenTree` is a `Literal`, return its inner token.
-    pub fn as_token(&self) -> Option<&Token> {
-        match self {
-            TokenTree::Literal { token } => Some(token),
-            _ => None,
-        }
-    }
-
-    /// If this `TokenTree` is a `Sequence`, return its child trees.
-    pub fn as_sequence(&self) -> Option<&[TokenTree]> {
-        match self {
-            TokenTree::Sequence { items, .. } => Some(items),
-            _ => None,
-        }
-    }
-
-    /// If this `TokenTree` is a `Group`, return its `open`, `content` and `close` subtrees.
-    pub fn as_group(&self) -> Option<(&TokenTree, &TokenTree, &TokenTree)> {
-        match self {
-            TokenTree::Group {
-                open,
-                content,
-                close,
-                ..
-            } => Some((open, content, close)),
-            _ => None,
-        }
-    }
-
-    /// If this `TokenTree` is a `Branch`, return its `left`, `delimiter` and `right` subtrees.
-    pub fn as_branch(&self) -> Option<(&TokenTree, &TokenTree, &TokenTree)> {
-        match self {
-            TokenTree::Branch {
-                left,
-                delimiter,
-                right,
-                ..
-            } => Some((left, delimiter, right)),
-            _ => None,
-        }
+        self.meta.insert(self.header_len(), message.into());
+        self.has_error = true;
+        return self;
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::{Token, TokenTree};
+/// Basic properties common for all `TokenTrees`.
+impl TokenTree {
+    /// Type of this `TokenTree`.
+    pub fn tree_type(&self) -> TokenTreeType {
+        return self.tree_type;
+    }
 
-    #[test]
-    fn test_literal() {
-        let token = Token::new(4, "test".into(), "test2".into());
-        let error_token = Token::new_error(
-            8,
-            "error-test".into(),
-            "tessssst".into(),
-            "You did something wrong".to_string(),
-        );
+    /// Index of the first character of this `TokenTree` in the input string.
+    pub fn starts_at(&self) -> usize {
+        return self.starts_at;
+    }
 
-        {
-            let mut literal = TokenTree::literal(token.clone());
-            assert_eq!(4, literal.starts_at());
-            assert_eq!(&"test".to_string(), literal.rule());
-            assert_eq!(false, literal.is_error());
-            assert_eq!(Some(&token), literal.as_token());
-            assert_eq!(None, literal.as_sequence());
-            assert_eq!(None, literal.as_branch());
-            assert_eq!(None, literal.as_group());
-            assert_eq!(None, literal.error_message());
-            assert_eq!(0, literal.extras().len());
-            literal.push_extra("Test extra".into());
-            assert_eq!(1, literal.extras().len());
-            assert_eq!("Test extra".to_string(), literal.extras()[0]);
-        }
+    /// Name of the rule that generated this `TokenTree`.
+    pub fn rule(&self) -> &str {
+        return &self.meta[0];
+    }
 
-        {
-            let error_literal = TokenTree::literal(error_token.clone());
-            assert_eq!(true, error_literal.is_error());
-            assert!(error_literal.error_message().is_some());
-        }
+    /// An iterator over string extras attached to this `TokenTree`.
+    pub fn extras(&self) -> Extras {
+        /* In literals, error message is at third, everywhere else it is second. */
+        return Extras::new(&self.meta, self.header_len());
+    }
+
+    /// Safely obtain token tree extra at the given position.
+    pub fn get_extra(&self, index: usize) -> Option<&str> {
+        return self.meta.get(index + self.header_len()).map(|i| i.as_str());
+    }
+
+    /// True if this is an error `TokenTree` (does not consider child trees).
+    pub fn has_error(&self) -> bool {
+        return self.has_error;
+    }
+
+    /// If this `TokenTree` has an error, return its error message, otherwise return `None`.
+    pub fn get_error_message(&self) -> Option<&str> {
+        return match self.has_error {
+            /* Error message is always the last item in the header. */
+            true => self.meta.get(self.header_len() - 1).map(|s| s.as_str()),
+            false => None,
+        };
+    }
+
+    /// Return error message if this `TokenTree` has error, otherwise panic.
+    pub fn error_message(&self) -> &str {
+        return self
+            .get_error_message()
+            .unwrap_or_else(|| panic!("Token {:?} has no error message.", self));
+    }
+
+    /// Return a slice of all children of this `TokenTree` (useful for tree traversal).
+    pub fn children(&self) -> &[TokenTree] {
+        return &self.children;
+    }
+
+    /// **(internal)** Number of semantic elements in the `meta` vector before the extras start.
+    fn header_len(&self) -> usize {
+        return 1 + if self.is_literal() { 1 } else { 0 } + if self.has_error { 1 } else { 0 };
+    }
+}
+
+/// Special methods for extracting data from `TokenTree` based on its `TokenTreeType`.
+impl TokenTree {
+    pub fn is_literal(&self) -> bool {
+        return self.tree_type == TokenTreeType::LITERAL;
+    }
+
+    pub fn is_sequence(&self) -> bool {
+        return self.tree_type == TokenTreeType::SEQUENCE;
+    }
+
+    pub fn is_group(&self) -> bool {
+        return self.tree_type == TokenTreeType::GROUP;
+    }
+
+    pub fn is_branch(&self) -> bool {
+        return self.tree_type == TokenTreeType::BRANCH;
+    }
+
+    pub fn get_literal_value(&self) -> Option<&str> {
+        return match self.is_literal() {
+            true => self.meta.get(1).map(|i| i.as_str()),
+            false => None,
+        };
+    }
+
+    pub fn literal_value(&self) -> &str {
+        return match self.is_literal() {
+            true => &self.meta[1],
+            false => panic!("Reading `value` of {:?}.", self.tree_type),
+        };
+    }
+
+    pub fn get_sequence(&self) -> Option<&[TokenTree]> {
+        return match self.is_sequence() {
+            true => Some(&self.children),
+            false => None,
+        };
+    }
+
+    pub fn sequence(&self) -> &[TokenTree] {
+        return self
+            .get_sequence()
+            .unwrap_or_else(|| panic!("Reading `sequence` of {:?}.", self.tree_type));
+    }
+
+    pub fn get_group_open(&self) -> Option<&TokenTree> {
+        return match self.is_group() {
+            true => Some(&self.children[0]),
+            false => None,
+        };
+    }
+
+    pub fn group_open(&self) -> &TokenTree {
+        return self
+            .get_group_open()
+            .unwrap_or_else(|| panic!("Reading `open` of {:?}.", self.tree_type));
+    }
+
+    pub fn get_group_content(&self) -> Option<&TokenTree> {
+        return match self.is_group() {
+            true => Some(&self.children[1]),
+            false => None,
+        };
+    }
+
+    pub fn group_content(&self) -> &TokenTree {
+        return self
+            .get_group_content()
+            .unwrap_or_else(|| panic!("Reading `content` of {:?}.", self.tree_type));
+    }
+
+    pub fn get_group_close(&self) -> Option<&TokenTree> {
+        return match self.is_group() {
+            true => Some(&self.children[2]),
+            false => None,
+        };
+    }
+
+    pub fn group_close(&self) -> &TokenTree {
+        return self
+            .get_group_close()
+            .unwrap_or_else(|| panic!("Reading `close` of {:?}.", self.tree_type));
+    }
+
+    pub fn get_group(&self) -> Option<(&TokenTree, &TokenTree, &TokenTree)> {
+        return match self.is_group() {
+            true => Some((&self.children[0], &self.children[1], &self.children[2])),
+            false => None,
+        };
+    }
+
+    pub fn group(&self) -> (&TokenTree, &TokenTree, &TokenTree) {
+        return self
+            .get_group()
+            .unwrap_or_else(|| panic!("Reading `group` of {:?}.", self.tree_type));
+    }
+
+    pub fn get_branch_left(&self) -> Option<&TokenTree> {
+        return match self.is_branch() {
+            true => Some(&self.children[0]),
+            false => None,
+        };
+    }
+
+    pub fn branch_left(&self) -> &TokenTree {
+        return self
+            .get_branch_left()
+            .unwrap_or_else(|| panic!("Reading `left` of {:?}.", self.tree_type));
+    }
+
+    pub fn get_branch_delimiter(&self) -> Option<&TokenTree> {
+        return match self.is_branch() {
+            true => Some(&self.children[1]),
+            false => None,
+        };
+    }
+
+    pub fn branch_delimiter(&self) -> &TokenTree {
+        return self
+            .get_branch_delimiter()
+            .unwrap_or_else(|| panic!("Reading `delimiter` of {:?}.", self.tree_type));
+    }
+
+    pub fn get_branch_right(&self) -> Option<&TokenTree> {
+        return match self.is_branch() {
+            true => Some(&self.children[2]),
+            false => None,
+        };
+    }
+
+    pub fn branch_right(&self) -> &TokenTree {
+        return self
+            .get_branch_right()
+            .unwrap_or_else(|| panic!("Reading `right` of {:?}.", self.tree_type));
+    }
+
+    pub fn get_branch(&self) -> Option<(&TokenTree, &TokenTree, &TokenTree)> {
+        return match self.is_branch() {
+            true => Some((&self.children[0], &self.children[1], &self.children[2])),
+            false => None,
+        };
+    }
+
+    pub fn branch(&self) -> (&TokenTree, &TokenTree, &TokenTree) {
+        return self
+            .get_branch()
+            .unwrap_or_else(|| panic!("Reading `branch` of {:?}.", self.tree_type));
+    }
+}
+
+/// Indexing into the `extras` array of a `TokenTree`.
+impl Index<usize> for TokenTree {
+    type Output = str;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        return &self.meta[index + if self.has_error { 3 } else { 2 }];
     }
 }
