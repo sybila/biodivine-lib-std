@@ -22,7 +22,7 @@ before_cache: |
 script:
   - cargo clean
   - cargo build
-  - cargo test
+  - cargo test --features shields_up
 
 after_success: |
   if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
