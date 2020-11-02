@@ -100,7 +100,12 @@ mod tests {
 
     #[test]
     fn test_error_token() {
-        let mut token = Token::new_error(10, "error-test-rule".into(), "test-value".into(), "test-error".into());
+        let mut token = Token::new_error(
+            10,
+            "error-test-rule".into(),
+            "test-value".into(),
+            "test-error".into(),
+        );
         token.push_extra("extra_1".to_string());
         token.push_extra("extra_2".to_string());
         assert_eq!(token.rule(), &("error-test-rule".to_string()));
@@ -121,5 +126,4 @@ mod tests {
     fn test_normal_as_error() {
         Token::new_error(3, "my-rule".into(), "value".into(), "???".into());
     }
-
 }
