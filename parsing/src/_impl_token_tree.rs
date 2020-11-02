@@ -99,6 +99,11 @@ impl TokenTree {
         return self.meta.get(index + self.header_len()).map(|i| i.as_str());
     }
 
+    /// Add extra string data `value` to this `TokenTree`.
+    pub fn push_extra(&mut self, value: &str) {
+        self.meta.push(value.into());
+    }
+
     /// True if this is an error `TokenTree` (does not consider child trees).
     pub fn has_error(&self) -> bool {
         return self.has_error;
@@ -287,5 +292,69 @@ impl Index<usize> for TokenTree {
 
     fn index(&self, index: usize) -> &Self::Output {
         return &self.meta[index + if self.has_error { 3 } else { 2 }];
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{Token, TokenTree};
+
+    #[test]
+    fn token_tree_literal() {
+        let mut literal = TokenTree::new_literal(Token::new(10, "my-rule", "my-value"));
+        assert!(!literal.has_error);
+        assert!(literal.is_literal());
+        assert!(literal.children().is_empty());
+        assert_eq!(literal.starts_at(), 10);
+        assert_eq!(literal.rule(), "my-rule");
+        assert_eq!(literal.literal_value(), "my-value");
+
+        assert_eq!(literal.extras().count(), 0);
+        assert_eq!(literal.get_extra(0), None);
+        literal.push_extra("extra-value");
+        assert_eq!(literal.extras().count(), 1);
+        assert_eq!(literal.get_extra(0), Some("extra-value"));
+        assert_eq!(&literal[0], "extra-value");
+
+        let literal = literal.with_error("My Error!");
+        assert!(literal.has_error);
+        assert_eq!(literal.error_message(), "My Error!");
+    }
+
+    #[test]
+    fn token_tree_sequence() {
+        let t = Token::new(10, "my-rule", "my-value");
+        let l = TokenTree::new_literal(t);
+        let sequence =
+            TokenTree::new_sequence("sequence-rule", vec![l.clone(), l.clone(), l.clone()]);
+        assert!(sequence.is_sequence());
+        assert_eq!(sequence.children().len(), 3);
+        assert_eq!(sequence.sequence().len(), 3);
+        assert_eq!(sequence.starts_at, 10);
+        assert_eq!(sequence.rule(), "sequence-rule");
+    }
+
+    #[test]
+    fn token_tree_group() {
+        let t = Token::new(10, "my-rule", "my-value");
+        let l = TokenTree::new_literal(t);
+        let group = TokenTree::new_group("group-rule", l.clone(), l.clone(), l.clone());
+        assert!(group.is_group());
+        assert_eq!(group.children().len(), 3);
+        assert_eq!(group.group(), (&l.clone(), &l.clone(), &l.clone()));
+        assert_eq!(group.starts_at, 10);
+        assert_eq!(group.rule(), "group-rule");
+    }
+
+    #[test]
+    fn token_tree_branch() {
+        let t = Token::new(10, "my-rule", "my-value");
+        let l = TokenTree::new_literal(t);
+        let group = TokenTree::new_branch("branch-rule", l.clone(), l.clone(), l.clone());
+        assert!(group.is_branch());
+        assert_eq!(group.children().len(), 3);
+        assert_eq!(group.branch(), (&l.clone(), &l.clone(), &l.clone()));
+        assert_eq!(group.starts_at, 10);
+        assert_eq!(group.rule(), "branch-rule");
     }
 }
