@@ -1,4 +1,5 @@
 mod _impl_token;
+mod _impl_token_iterator_and_indexing;
 mod _impl_token_tree;
 
 /// Annotated subsequence of the input string.
@@ -7,16 +8,18 @@ mod _impl_token_tree;
 /// position in the input string. It can possibly contain other `extra`
 /// metadata provided by the rule which created it.
 ///
-/// If the rule name starts with `error`, then the token also must have
+/// The token can be declared to be an *error token*. Then it must also have
 /// an associated human readable error message.
 ///
 /// Note that token `value` can be empty. This typically does not happen
 /// directly in the tokenizer but is introduced as error handling
-/// measure in further processing stages.
+/// measure in further processing stages to propagate errors about missing
+/// content.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Token {
     starts_at: usize,
-    meta: Vec<String>, // [rule, value, message (is error), extras, ...]
+    has_error: bool,
+    meta: Vec<String>, // [rule, value, message (if error), extras, ...]
 }
 
 /// A collection of tokens with some given structural hierarchy.
@@ -57,4 +60,10 @@ pub enum TokenTree {
         left: Box<TokenTree>,
         right: Box<TokenTree>,
     },
+}
+
+/// Iterator over token metadata.
+pub struct TokenExtras<'a> {
+    token: &'a Token,
+    index: usize,
 }
