@@ -18,16 +18,16 @@ fn main() {
                 number = (number + 1) ^ randomizer;
             }
             let start = SystemTime::now();
+            let mut number = 0;
             for it in 0..10 {
                 println!("Iter {}", it);
-                let mut number = 0;
                 for i in 0..elements {
-                    v[i] = number;
-                    number = (number + 1) ^ randomizer;
+                    //v[i] = number;
+                    number = (number + v[i]) ^ randomizer;
                 }
             }
             let elapsed = start.elapsed().unwrap();
-            println!("Write 1GB of data into RAM in: {}ms", elapsed.as_millis() / ((gb_count * 10) as u128));
+            println!("Read 1GB of data from RAM in: {}ms ({})", elapsed.as_millis() / ((gb_count * 10) as u128), number);
         }));
     }
 
